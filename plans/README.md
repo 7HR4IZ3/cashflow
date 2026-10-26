@@ -2,6 +2,10 @@
 
 First draft, 2026-10-25. This folder is the current source of truth for what we intend to implement. It contains plans, not claims of implemented or device-tested behaviour.
 
+## Current redesign
+
+The user selected **Fresh current** on 2026-10-26, replacing the original paper-ledger appearance. Read the [reference comparison](fresh-current-research.md), [screen and interaction specification](fresh-current-design.md), and [interactive screen comparison](fresh-current-comparison.html) before the next UI implementation pass. The HTML is an isolated example-data prototype, not the installed app. The former [UI design](ui-design.md) remains historical context; its palette and stamp-heavy presentation are superseded.
+
 ## The app idea
 
 Cashflow is a money diary that builds itself from transaction alerts. The user chooses which sources to watch. Cashflow interprets relevant alerts, compares them with recent evidence, and records or updates transactions. Clear entries stay recorded unless corrected. Uncertain entries wait for review.

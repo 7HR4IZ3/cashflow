@@ -1,0 +1,911 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cashflow · Fresh current — old vs new comparison</title>
+<style>
+  :root{
+    --bg:#FAFAF8; --surface:#FFFFFF;
+    --ink:#17171A; --ink2:#55555E;
+    --ink3:#6E6E78; /* darkened for AA on white */
+    --ink4:#B9B9C0;
+    --line:rgba(23,23,26,.09); --line-soft:rgba(23,23,26,.06);
+    --mint:#2BDF9C; --mint-deep:#0E7A55; --mint-ink:#0B2F22;
+    --mint-soft:rgba(43,223,156,.14);
+    --amber:#9A6A00; --amber-soft:rgba(154,106,0,.10);
+    --violet:#5B4BC9; --violet-soft:rgba(91,75,201,.10);
+    --fail:#C23C22; --fail-soft:rgba(194,60,34,.10);
+    --ink-soft:rgba(23,23,26,.05);
+    --r-lg:24px; --r-md:16px; --r-sm:12px;
+    --ease:cubic-bezier(.22,.9,.3,1);
+    font-size:16px;
+  }
+  html{background:transparent;}
+  /* Outer text follows the host theme (T3 light/dark) with the light-palette values as standalone fallback. */
+  body{margin:0;color:var(--foreground,var(--ink));font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased;background:transparent;}
+  h1,h2,h3{color:var(--foreground,var(--ink));}
+  /* Outermost padding removed: the page itself must never overflow 360px viewport width. */
+  .wrap{max-width:728px;margin:0 auto;padding:28px 0 56px;}
+  h1{font-size:1.5rem;letter-spacing:-.02em;margin:.2rem 0 .3rem;font-weight:700;}
+  .lede{color:var(--muted-foreground,var(--ink2));margin:.2rem 0 1rem;max-width:52ch;line-height:1.5;}
+  h2{font-size:1.05rem;letter-spacing:-.01em;margin:2.4rem 18px .4rem;}
+  h3{font-size:.95rem;margin:.8rem 0 .2rem;}
+  p{line-height:1.55;color:var(--muted-foreground,var(--ink2));margin:.35rem 18px;}
+  a{color:var(--accent,var(--mint-deep));}
+  .px{padding-left:18px;padding-right:18px;}
+  @media(max-width:420px){.px{padding-left:12px;padding-right:12px;}h2{margin-left:12px;margin-right:12px;}p{margin-left:12px;margin-right:12px;}}
+  .eyebrow{font-size:.75rem;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--muted-foreground,var(--ink3));margin:.6rem 18px .2rem;}
+  .pill{display:inline-flex;align-items:center;gap:.4em;font-size:.78rem;font-weight:600;padding:.3em .7em;border-radius:999px;background:var(--ink-soft);color:var(--muted-foreground,var(--ink2));}
+  .pill.mint{background:var(--mint-soft);color:var(--mint-deep);}
+  .toprow{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;padding:0 18px;margin-bottom:.8rem;}
+  .mark{width:34px;height:34px;border-radius:11px;background:var(--ink);display:inline-grid;place-items:center;flex:0 0 auto;}
+
+  /* ————— old vs new strip ————— */
+  .vsgrid{display:grid;grid-template-columns:1fr;gap:14px;padding:0 18px;}
+  @media(min-width:640px){.vsgrid{grid-template-columns:1fr 1fr;}}
+  .vscard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px;color:var(--ink);}
+  .vsh{display:flex;align-items:center;gap:.5rem;font-weight:650;font-size:.9rem;margin-bottom:.6rem;}
+  .vsh .pill{margin-left:auto;}
+  .oldmock{border-radius:var(--r-md);border:1px solid var(--line);background:#F7F2E8;padding:12px;font-size:.8rem;color:#221E17;overflow:hidden;}
+  .oldmock b{display:block;font-size:.72rem;color:#9d967f;font-weight:600;margin-bottom:6px;}
+  .oldrow{background:#FCF8EF;border:1px solid rgba(34,30,23,.12);border-radius:12px;padding:8px 10px;margin:6px 0;}
+  .oldrow small{color:#8f8871;}
+  .oldwarn{display:inline-block;background:rgba(86,69,194,.10);color:#5645C2;border-radius:8px;padding:2px 7px;font-size:.7rem;margin-top:4px;}
+  .newmini{border-radius:var(--r-md);border:1px solid var(--line);background:var(--bg);padding:12px;font-size:.8rem;}
+  .newrow{display:flex;gap:10px;align-items:center;padding:10px 6px;border-bottom:1px solid var(--line-soft);}
+  .newrow:last-child{border:none;}
+  .newamt{margin-left:auto;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .tagchip{font-size:.72rem;color:var(--ink3);}
+  ol.foots{color:var(--muted-foreground,var(--ink2));font-size:.85rem;line-height:1.55;padding-left:1.2rem;margin:.4rem 0 0;}
+
+  /* ————— phone ————— */
+  .phonebar{display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;padding:0 18px;margin:1.6rem 0 .8rem;}
+  .ptab{border:1px solid var(--line);background:var(--surface);color:var(--ink2);font:inherit;font-size:.85rem;font-weight:600;padding:.55em 1.1em;border-radius:999px;cursor:pointer;min-height:44px;transition:transform .16s var(--ease),background .16s;}
+  .ptab:active{transform:scale(.96);}
+  .ptab[aria-selected="true"]{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .tools{display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;padding:0 18px;margin-bottom:.8rem;}
+  /* Neutral chrome controls: red is reserved for real destructive actions/errors only */
+  .neutbtn{border:1px solid var(--line);background:var(--surface);color:var(--ink2);font:inherit;font-size:.8rem;font-weight:650;padding:.45em .9em;border-radius:999px;cursor:pointer;min-height:44px;transition:transform .16s var(--ease);}
+  .neutbtn:active{transform:scale(.96);}
+
+  .phone{background:var(--bg);border-radius:34px;border:1px solid var(--line);box-shadow:0 12px 40px -18px rgba(23,23,26,.22);max-width:440px;margin:0 auto;overflow:hidden;position:relative;}
+  /* Light-palette isolation: the phone preview stays black-on-white no matter the host theme,
+     and host/user-agent default control styling (white button text etc.) is reset inside it.
+     :where() keeps specificity at zero so every semantic rule below (.ptab, .btn.mint, .nb,
+     .minisel, .kpad button …) still wins unchanged. */
+  .phone{color:var(--ink);color-scheme:light;}
+  .phone :where(button,input,select,textarea){color:var(--ink);background-color:transparent;font-family:inherit;}
+  .phone :where(input,textarea)::placeholder{color:var(--ink4);}
+  /* Keep the host-colored outer h1/h2/h3 + p rules from bleeding into the white phone sheet;
+     scoped class+element selectors override the bare element rules while semantic
+     classes/inline colors below still win. */
+  .phone h1,.phone h2,.phone h3{color:var(--ink);}
+  .phone p{color:var(--ink2);}
+  .ph-status{display:flex;justify-content:space-between;padding:10px 18px 0;font-size:.72rem;font-weight:600;color:var(--ink3)}
+  .ph-status .ex{color:var(--violet);font-weight:700;}
+  .ph-body{min-height:640px;}
+  .screen{display:none;padding:6px 0 110px;animation:sfade .18s var(--ease);}
+  .screen.on{display:block;}
+  @keyframes sfade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+  .appbar{display:flex;align-items:center;gap:.6rem;padding:8px 16px 10px;}
+  .appbar .nm{font-weight:750;letter-spacing:-.02em;font-size:1.05rem;}
+  .appbar .sp{margin-left:auto;}
+  .ghost{border:none;background:transparent;padding:12px;border-radius:12px;cursor:pointer;color:var(--ink3);display:grid;place-items:center;}
+  .ghost:active{background:var(--ink-soft);}
+  .navbar{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:space-between;padding:8px 14px calc(10px + env(safe-area-inset-bottom,0px));background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-top:1px solid var(--line-soft);}
+  .nb{display:grid;justify-items:center;gap:2px;border:none;background:transparent;color:var(--ink3);font:inherit;font-size:.72rem;font-weight:600;min-width:56px;min-height:48px;border-radius:14px;cursor:pointer;}
+  .nb.on{color:var(--mint-deep);}
+  .nb svg{width:22px;height:22px;}
+  .nb-add{width:56px;height:56px;border-radius:20px;border:none;background:var(--mint);color:var(--mint-ink);box-shadow:0 8px 20px -8px rgba(43,223,156,.65);display:grid;place-items:center;cursor:pointer;transition:transform .18s var(--ease);}
+  .nb-add:active{transform:scale(.94);}
+  .badge{position:absolute;top:2px;right:4px;min-width:18px;height:18px;border-radius:9px;background:var(--violet);color:#fff;font-size:.68rem;font-weight:700;display:grid;place-items:center;padding:0 5px;}
+
+  /* ————— home ————— */
+  .hero{padding:6px 16px 14px;}
+  .hero .ovl{font-size:.78rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);}
+  /* Compact selectors: two native selects replace always-on chip rows */
+  .selrow{display:flex;gap:.5rem;flex-wrap:wrap;margin:8px 0 2px;}
+  .minisel{appearance:none;-webkit-appearance:none;border:1px solid var(--line);background-color:var(--surface);color:var(--ink);font:inherit;font-size:.85rem;font-weight:650;padding:0 30px 0 12px;border-radius:999px;min-height:44px;cursor:pointer;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' stroke='%236E6E78' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");background-repeat:no-repeat;background-position:right 12px center;}
+  .minisel:focus-visible{outline:2px solid var(--mint);outline-offset:2px;}
+  .chip{border:1px solid var(--line);background:var(--surface);color:var(--ink2);font:inherit;font-size:.82rem;font-weight:600;padding:.4em .85em;border-radius:999px;cursor:pointer;min-height:44px;transition:transform .12s var(--ease);}
+  .chip:active{transform:scale(.96);}
+  .chip.sel{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .netlab{color:var(--ink3);font-size:.8rem;margin-top:10px;}
+  .netamt{font-size:2.1rem;font-weight:750;letter-spacing:-.03em;font-variant-numeric:tabular-nums;}
+  .iosum{display:flex;gap:22px;margin-top:8px;}
+  .iosum .lab{font-size:.78rem;font-weight:650;color:var(--ink3);}
+  .iosum .val{font-weight:700;font-variant-numeric:tabular-nums;font-size:1rem;}
+  .val.in{color:var(--mint-deep);}
+  .cnt-check{display:inline-flex;align-items:center;gap:.45rem;background:var(--violet-soft);color:var(--violet);border:1px solid transparent;border-radius:999px;padding:.55em 1em;font:inherit;font-size:.85rem;font-weight:650;cursor:pointer;margin-top:12px;min-height:44px;}
+  .search{margin:4px 16px 8px;display:flex;align-items:center;gap:.5rem;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:0 12px;}
+  .search input{border:none;background:transparent;font:inherit;font-size:.95rem;color:var(--ink);outline:none;min-height:44px;flex:1;min-width:0;}
+  .search input::placeholder{color:var(--ink4);}
+  .fchips{display:flex;gap:.4rem;overflow-x:auto;padding:0 16px 10px;scrollbar-width:none;min-height:44px;align-items:center;}
+  .dh{font-size:.78rem;font-weight:700;color:var(--ink3);padding:12px 16px 4px;text-transform:uppercase;letter-spacing:.07em;}
+  /* Row grid: never wider than the phone, money column never squeezed out. */
+  .trow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid var(--line-soft);width:100%;border-left:none;border-right:none;border-top:none;background:transparent;font:inherit;text-align:left;cursor:pointer;transition:background .15s;min-height:60px;box-sizing:border-box;}
+  .trow:active{background:var(--ink-soft);}
+  .dot-g{width:38px;height:38px;border-radius:13px;display:grid;place-items:center;flex:0 0 auto;background:var(--mint-soft);}
+  .dot-g.out{background:var(--ink-soft);}
+  .trow .leadwrap{min-width:0;}
+  .trow .lead{font-size:1rem;font-weight:600;display:block;min-width:0;overflow-wrap:break-word;}
+  .trow .sub{font-size:.81rem;color:var(--ink2);margin-top:1px;display:block;min-width:0;overflow-wrap:break-word;}
+  .trow .uncla{font-size:.72rem;color:var(--ink3);border:1px solid var(--line);border-radius:999px;padding:1px 7px;margin-left:6px;white-space:nowrap;}
+  .trow .amtr{min-width:0;text-align:right;}
+  .trow .amt{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;font-size:1rem;}
+  .trow .amtdir{font-weight:650;color:var(--ink3);font-size:.78rem;display:block;}
+  .emptyone{margin:26px 16px;text-align:center;color:var(--ink3);font-size:.9rem;}
+  .emptyone b{color:var(--ink);display:block;font-size:1rem;margin-bottom:.3rem;}
+
+  /* Hidden bottom nav on Add: an explicit Cancel lives in the screen, and Save sits in flow (never over the keypad) */
+  .phone.addmode .navbar{display:none;}
+  .phone.addmode .screen{padding-bottom:16px;}
+  .addbar{display:flex;justify-content:space-between;align-items:center;padding:8px 16px 2px;}
+  .addbar .ttl{font-size:.78rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);}
+  .fildet{padding:0 16px 6px;}
+  .fildet .fchips{padding:0;}
+  .fildet summary{list-style:none;cursor:pointer;min-height:44px;display:flex;align-items:center;gap:.45rem;font-size:.85rem;font-weight:650;color:var(--ink2);width:fit-content;}
+  .fildet summary::-webkit-details-marker{display:none;}
+  .scopedet{display:inline;}
+  .scopedet summary{list-style:none;cursor:pointer;min-height:44px;display:inline-flex;align-items:center;color:var(--mint-deep);font-weight:650;font-size:.78rem;}
+  .scopedet summary::-webkit-details-marker{display:none;}
+  .scopedet p{margin:.15rem 0 .4rem;color:var(--ink3);font-size:.8rem;line-height:1.45;}
+
+  /* ————— review ————— */
+  .rvcard{margin:10px 16px 0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:14px;}
+  .rvt{display:inline-flex;align-items:center;gap:.4rem;font-size:.78rem;font-weight:700;color:var(--violet);background:var(--violet-soft);border-radius:999px;padding:.25em .7em;}
+  .rvamt{font-size:1.15rem;font-weight:700;letter-spacing:-.01em;font-variant-numeric:tabular-nums;margin:.55rem 0 .1rem;}
+  .rvreason{font-size:.85rem;color:var(--ink2);line-height:1.45;}
+  .rvcard details{margin-top:8px;font-size:.8rem;color:var(--ink3);}
+  .rvcard summary{cursor:pointer;color:var(--mint-deep);font-weight:650;min-height:44px;display:flex;align-items:center;}
+  .grab{margin-top:6px;background:var(--ink-soft);border-radius:10px;padding:8px 10px;font-variant-numeric:tabular-nums;line-height:1.45;}
+  .rvact{display:flex;gap:.5rem;margin-top:12px;flex-wrap:wrap;}
+  .btn{border:none;font:inherit;font-weight:650;font-size:.9rem;border-radius:999px;min-height:44px;padding:0 1.2em;cursor:pointer;transition:transform .16s var(--ease);}
+  .btn:active{transform:scale(.96);}
+  .btn.mint{background:var(--mint);color:var(--mint-ink);}
+  .btn.quiet{background:transparent;color:var(--ink2);border:1px solid var(--line);}
+  .btn.block{width:100%;}
+  .rvdone{margin:10px 16px 0;background:var(--mint-soft);border-radius:var(--r-md);padding:12px 14px;font-size:.88rem;color:var(--mint-deep);}
+
+  /* ————— add ————— */
+  .amt-hero{padding:4px 16px 8px;}
+  .amt-big{font-size:2.6rem;font-weight:750;letter-spacing:-.03em;font-variant-numeric:tabular-nums;min-height:1.2em;color:var(--ink);}
+  .amt-big.dim{color:var(--ink4);}
+  .chipscroll{display:flex;gap:.4rem;overflow-x:auto;padding:0 16px 6px;scrollbar-width:none;min-height:44px;align-items:center;}
+  .seg{display:flex;margin:2px 16px 10px;background:var(--ink-soft);border-radius:14px;padding:3px;}
+  .seg button{flex:1;border:none;background:transparent;font:inherit;font-size:.88rem;font-weight:650;min-height:44px;border-radius:11px;color:var(--ink2);cursor:pointer;}
+  .seg button.sel{background:var(--surface);color:var(--ink);box-shadow:0 1px 4px rgba(23,23,26,.12);}
+  .fldlab{font-size:.78rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);padding:10px 16px 6px;}
+  .morel{display:flex;align-items:center;gap:.5rem;margin:2px 16px 10px;border:1px dashed var(--line);border-radius:14px;background:transparent;color:var(--ink2);font:inherit;font-size:.88rem;font-weight:600;min-height:44px;padding:0 14px;cursor:pointer;}
+  .fieldlines{margin:0 16px;display:none;flex-direction:column;gap:8px;}
+  .fieldlines.on{display:flex;}
+  .fieldlines .chipscroll{padding:0;}
+  .infield{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 12px;}
+  .infield input{border:none;outline:none;background:transparent;font:inherit;font-size:.95rem;color:var(--ink);width:100%;min-height:30px;box-sizing:border-box;}
+  .infield label{font-size:.72rem;font-weight:650;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;}
+  .infield input:focus{outline:2px solid var(--mint);outline-offset:-2px;}
+  .savebar{padding:10px 16px 14px;} /* in-flow below the keypad — no absolute overlay */
+  .savebar .err{font-size:.82rem;color:var(--fail);margin:0 4px 6px;line-height:1.4;}
+  .kpad{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:8px 16px 0;}
+  .kpad button{border:none;background:transparent;font:inherit;font-size:1.25rem;font-weight:600;color:var(--ink);min-height:52px;border-radius:14px;cursor:pointer;transition:background .1s;}
+  .kpad button:active{background:var(--ink-soft);}
+  .errchip{display:inline-flex;align-items:center;min-height:44px;padding:.4em .8em;border-radius:999px;background:var(--fail-soft);color:var(--fail);font-size:.82rem;font-weight:650;}
+
+  /* ————— sheet ————— */
+  .scrim{position:absolute;inset:0;background:rgba(17,17,20,.3);opacity:0;pointer-events:none;transition:opacity .2s;}
+  .scrim.on{opacity:1;pointer-events:auto;}
+  .sheet{position:absolute;left:0;right:0;bottom:0;background:var(--surface);border-radius:24px 24px 0 0;padding:10px 18px calc(18px + env(safe-area-inset-bottom,0px));transform:translateY(105%);transition:transform .26s var(--ease);max-height:82%;overflow-y:auto;}
+  .sheet:not(.on){visibility:hidden;} /* no interaction while closed */
+  @media(prefers-reduced-motion:reduce){.sheet{transition:none;}}
+  html.rm .scrim,html.rm .sheet,html.rm .screen,html.rm .trow,html.rm .btn,html.rm .nb-add,html.rm .ptab,html.rm .chip,html.rm .neutbtn{transition:none !important;animation:none !important;}
+  .sheet.on{transform:none;}
+  .grabber{width:36px;height:4px;border-radius:2px;background:var(--line);margin:2px auto 12px;}
+  .kv{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line-soft);font-size:.9rem;}
+  .kv .k{color:var(--ink3);} .kv .v{font-weight:600;font-variant-numeric:tabular-nums;text-align:right;}
+  .linkbtn{border:none;background:transparent;font:inherit;font-size:.82rem;font-weight:650;color:var(--mint-deep);cursor:pointer;padding:.5em 0;min-height:44px;}
+
+  /* ————— refs ————— */
+  .refs{display:grid;gap:12px;grid-template-columns:1fr;padding:0 18px;}
+  @media(min-width:640px){.refs{grid-template-columns:1fr 1fr;}}
+  .ref{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:14px 16px;font-size:.86rem;color:var(--ink);}
+  .ref b{font-weight:700;}
+  .ref ul{margin:.3rem 0 .2rem;padding-left:1.1rem;color:var(--ink2);line-height:1.5;}
+  .ref .no{color:var(--ink3);}
+  .ref .b{color:var(--mint-deep);font-weight:650;}
+  .ref .u{color:var(--fail);font-weight:650;}
+  .ref .src{margin-top:.5rem;font-size:.78rem;}
+  /* Reference cards sit on explicit white surfaces — keep their text and links dark even in a dark host. */
+  .ref a,.vscard a,.oldmock a{color:var(--mint-deep);}
+  /* Same host-theme leak guard for the reference/how-to cards on --surface */
+  .ref h3,.vscard h3{color:var(--ink);}
+  .ref p{color:var(--ink2);}
+  /* Navigation table scrolls horizontally inside the page on narrow screens; the document itself never overflows. */
+  .mapscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .mapscroll table.map{min-width:560px;}
+  table.map{border-collapse:collapse;width:100%;font-size:.85rem;margin:.4rem 0;}
+  table.map td,table.map th{border-bottom:1px solid var(--line-soft);padding:8px 10px;text-align:left;vertical-align:top;line-height:1.45;}
+  table.map th{font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted-foreground,var(--ink3));}
+  .foot{color:var(--muted-foreground,var(--ink3));font-size:.8rem;margin-top:2rem 18px 0;border-top:1px solid var(--line);padding:12px 18px 0;line-height:1.5;}
+  details.board{padding:0 18px;}
+  details.board summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:650;color:var(--mint-deep);}
+  .toast{position:absolute;left:14px;right:14px;bottom:142px;background:var(--ink);color:#fff;border-radius:14px;padding:11px 14px;font-size:.85rem;line-height:1.4;opacity:0;transform:translateY(8px);transition:opacity .22s,transform .22s var(--ease);pointer-events:none;display:flex;gap:.5rem;align-items:flex-start;}
+  .toast.on{opacity:1;transform:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="toprow">
+    <span class="mark" aria-hidden="true">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M4 14c3.5 0 3.5-6 8-6s4.5 6 8 6" stroke="#2BDF9C" stroke-width="2.4" stroke-linecap="round"/>
+        <circle cx="12" cy="17.5" r="1.6" fill="#2BDF9C"/>
+      </svg>
+    </span>
+    <h1 style="margin:0;font-size:1.25rem;">Fresh current — Cashflow redesign</h1>
+    <span class="pill mint">Option 1 · confirmed</span>
+  </div>
+
+  <div class="tools">
+    <button class="neutbtn" id="rmBtn" aria-pressed="false">Reduced motion: off</button>
+    <button class="neutbtn" id="resetAll" title="Restores sandbox examples and clears every draft, filter and review change">Reset examples</button>
+  </div>
+
+  <p class="lede px">Soft-white ground, near-black ink, one vivid mint accent, open date-grouped rows instead of cards, and a single “to check” pill. Everything in the phone is <b>Example sandbox data</b>: it lives in this page only and never reads or writes the app. Sandbox date is fixed at <b>26 Oct 2026</b>.</p>
+
+  <!-- ——————— PHONE ——————— -->
+  <h2>Interactive preview · Example sandbox</h2>
+  <div class="phonebar" role="tablist" aria-label="Preview screens">
+    <button class="ptab" role="tab" id="t-home" aria-selected="true" aria-controls="s-home" onclick="show('home')">Home</button>
+    <button class="ptab" role="tab" id="t-review" aria-selected="false" aria-controls="s-review" onclick="show('review')">Review <span id="rvCountTab"></span></button>
+    <button class="ptab" role="tab" id="t-add" aria-selected="false" aria-controls="s-add" onclick="show('add')">Add</button>
+  </div>
+
+  <div class="phone" id="phone">
+    <div class="ph-status"><span>9:41</span><span class="ex">EXAMPLE DATA — SANDBOX ONLY</span></div>
+
+    <div class="appbar">
+      <span class="mark" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 14c3.5 0 3.5-6 8-6s4.5 6 8 6" stroke="#2BDF9C" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="17.5" r="1.6" fill="#2BDF9C"/></svg></span>
+      <span class="nm">Cashflow</span>
+      <span class="sp"></span>
+      <button class="ghost" onclick="settingsNote()" aria-label="Settings in proposed map">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8h10M18 8h2M4 16h4M12 16h8"/><circle cx="15" cy="8" r="2"/><circle cx="9" cy="16" r="2"/></svg>
+      </button>
+    </div>
+
+    <div class="ph-body">
+      <!-- HOME -->
+      <div class="screen on" id="s-home" role="tabpanel" aria-label="Home preview">
+        <div class="hero">
+          <div class="ovl" id="periodLabel">Totals scope</div>
+          <div class="selrow">
+            <select class="minisel" id="viewCurSel" aria-label="View currency for totals and history" onchange="setViewCur(this.value)"></select>
+            <select class="minisel" id="periodSel" aria-label="Period" onchange="setPeriod(this.value)">
+              <option value="all">All time</option>
+              <option value="7">Last 7 days</option>
+              <option value="30">Last 30 days</option>
+            </select>
+          </div>
+          <div class="netlab" id="netLabel">Net sent</div>
+          <div class="netamt" id="netAmt"></div>
+          <div class="iosum">
+            <div><div class="lab">Money in</div><div class="val in" id="inAmt"></div></div>
+            <div><div class="lab">Money out</div><div class="val" id="outAmt"></div></div>
+          </div>
+          <div class="scopeline">
+            <span class="tagchip" id="scopeNote"></span>
+            <details class="scopedet">
+              <summary aria-label="What the summary scope means">About this scope<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="margin-left:.3em;"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.1"/></svg></summary>
+              <p>Summary scope: completed records only · own transfers (both legs) excluded · pending and failed records never counted</p>
+            </details>
+          </div>
+          <button class="cnt-check" id="checkPill" onclick="show('review')" aria-label="Open Review: items to check">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 3l9 16H3z" stroke-linejoin="round"/><path d="M12 10v4M12 16.6v.1"/></svg>
+            <span id="checkTxt">2 to check</span>
+          </button>
+        </div>
+
+        <div class="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="color:var(--ink3);flex:0 0 auto"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          <input id="q" oninput="setQ(this.value)" placeholder="Search who, note, account…" aria-label="Search activity"></div>
+        <details class="fildet" id="fildet">
+          <summary aria-label="Toggle filters">Filters<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="color:var(--ink3);"><path d="M6 9l6 6 6-6"/></svg><span class="tagchip" id="filtCount" hidden></span></summary>
+          <div class="fchips" id="fchips" role="group" aria-label="Filters"></div>
+        </details>
+        <div id="rows"></div>
+        <div class="emptyone" id="homeEmpty" hidden><b>Nothing here yet</b>Try fewer words, or clear the filters.</div>
+      </div>
+
+      <!-- REVIEW -->
+      <div class="screen" id="s-review" role="tabpanel" aria-label="Review preview">
+        <div class="px" style="padding-top:4px;">
+          <div class="ovl" style="font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--violet);padding:0;">Needs a decision</div>
+        </div>
+        <div id="rvList"></div>
+        <div class="emptyone" id="rvEmpty" hidden>
+          <b>The tray is clear</b>
+          Alerts Cashflow can’t read confidently wait here. Clear ones go straight in as activity.
+        </div>
+      </div>
+
+      <!-- ADD -->
+      <div class="screen" id="s-add" role="tabpanel" aria-label="Add preview">
+        <div class="addbar">
+          <span class="ttl">Fast entry</span>
+          <button class="btn quiet" id="addCancel" onclick="backFromAdd()">Cancel</button>
+        </div>
+        <div class="amt-hero">
+          <div class="selrow" style="margin:0 0 4px;">
+            <select class="minisel" id="addCurSel" aria-label="Entry currency" onchange="setAddCur(this.value)"></select>
+            <span class="tagchip">amount · Example sandbox</span>
+          </div>
+          <div class="amt-big" id="amtBig" aria-live="polite"><span class="dim">0</span></div>
+        </div>
+        <div class="seg" role="group" aria-label="Direction">
+          <button id="dir-in" onclick="setDir('IN')">In</button>
+          <button id="dir-out" class="sel" onclick="setDir('OUT')">Out</button>
+        </div>
+        <div class="px" style="padding-bottom:4px;">
+          <button class="morel" onclick="toggleMore()" aria-expanded="false" id="moreBtn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg> More details — kind, status, who, account, note, date
+          </button>
+          <div class="fieldlines" id="moreFields">
+            <div>
+              <div class="fldlab">Kind</div>
+              <div class="chipscroll" id="kindChips" role="group" aria-label="Kind"></div>
+            </div>
+            <div>
+              <div class="fldlab">Status</div>
+              <div class="chipscroll" id="statChips" role="group" aria-label="Status"></div>
+            </div>
+            <div class="infield"><label for="fWho">Who (optional)</label><input id="fWho" placeholder="e.g. Chidi"></div>
+            <div class="infield"><label for="fAcc">Account (optional)</label><input id="fAcc" placeholder="Unassigned"></div>
+            <div class="infield"><label for="fNote">Note (optional)</label><input id="fNote" placeholder="Add a note"></div>
+            <div class="infield"><label for="fDate">Date (editable)</label><input id="fDate" type="date" value="2026-10-26"></div>
+          </div>
+        </div>
+        <div class="kpad" id="kpad"></div>
+        <div class="savebar">
+          <div class="err" id="saveErr" hidden></div>
+          <button class="btn mint block" id="saveBtn" style="min-height:48px;" onclick="saveDemo()">Save transaction</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="navbar">
+      <button class="nb on" id="n-home" onclick="show('home')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 9.5V20h5v-5h4v5h5V9.5"/></svg>Home
+      </button>
+      <button class="nb" id="n-review" onclick="show('review')" style="position:relative;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18v6a6 6 0 01-6 6H9a6 6 0 01-6-6z"/><path d="M7 12h2M13 12h2"/></svg>Review<span class="badge" id="navBadge">2</span>
+      </button>
+      <button class="nb-add" id="n-add" onclick="openAdd()" aria-label="Add transaction"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+      <button class="nb" onclick="settingsNote()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 00-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 00-2-1.2L14 3h-4l-.5 2.6a7 7 0 00-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 005 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1c.6.5 1.3.9 2 1.2L10 21h4l.5-2.6c.7-.3 1.4-.7 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z"/></svg>Settings
+      </button>
+    </div>
+
+    <div class="scrim" id="scrim" onclick="closeSheet()"></div>
+    <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Detail"></div>
+    <div class="toast" id="toast" role="status"></div>
+  </div>
+
+  <p class="foot" style="margin-top:.8rem;border:none;padding-top:.4rem;">Every interaction runs on Example data inside this page — nothing saves, syncs or leaves it. <b>Reset examples</b> at the top restores all drafts, ledger, review and filters.</p>
+
+  <!-- ——————— BORROWED vs REJECTED ——————— -->
+  <details class="board"><summary>Research behind this proposal — borrowed vs rejected (collapsible)</summary>
+  <div class="refs" style="padding:0;">
+    <div class="ref">
+      <b>Copilot Money</b>
+      <ul>
+        <li><span class="b">Borrow:</span> trusted category glyphs, tappable rows with detail editing, quick add always one thumb away, a dedicated “to review” surface.</li>
+        <li><span class="u">Reject:</span> budgets or Free-to-Spend graphs, “all new transactions must be reviewed”, bank-balance framing.</li>
+        <li class="no">Their Review demands attention on <i>every</i> entry; ours is only for genuinely ambiguous or unparseable alerts.</li>
+      </ul>
+      <div class="src">Sources: <a href="https://www.copilot.money/">copilot.money</a> · <a href="https://help.copilot.money/en/articles/9554412-transactions-tab-overview">Transactions tab</a> · <a href="https://help.copilot.money/en/articles/6045480-dashboard-tab-overview">Dashboard tab</a></div>
+    </div>
+    <div class="ref">
+      <b>Things 3</b>
+      <ul>
+        <li><span class="b">Borrow:</span> optional details tucked behind one calm expander; one identical plus action everywhere; clear date headings; short purposeful motion.</li>
+        <li><span class="u">Reject:</span> any project/list organisation metaphor — payments are one stream, not projects.</li>
+      </ul>
+      <div class="src">Source: <a href="https://culturedcode.com/things/features/">culturedcode.com/things/features</a></div>
+    </div>
+    <div class="ref">
+      <b>Cash App</b>
+      <ul>
+        <li><span class="b">Borrow:</span> bold personality, compact number-first hero and keypad that make the main action physical and fast.</li>
+        <li><span class="u">Reject:</span> the implication of sending money — Cashflow never initiates or reverses payments; save means “write in the book”.</li>
+      </ul>
+      <div class="src">Source: <a href="https://cash.app/">cash.app</a></div>
+    </div>
+    <div class="ref">
+      <b>Buddy</b>
+      <ul>
+        <li><span class="b">Borrow:</span> the friendly register of an everyday money app — warm language, one accent that smiles.</li>
+        <li><span class="u">Reject:</span> dashboard/budget modules and custom category colour themes — totals stay one honest set.</li>
+      </ul>
+      <div class="src">Source: <a href="https://buddy.download/">buddy.download</a></div>
+    </div>
+  </div>
+  </details>
+
+  <!-- ——————— NAV MAP ——————— -->
+  <h2>Proposed navigation map</h2>
+  <div class="px">
+  <div class="mapscroll" role="region" aria-label="Proposed navigation map table" tabindex="0">
+  <table class="map">
+    <tr><th>Destination</th><th>Contains</th><th>Status vs today</th></tr>
+    <tr><td><b>Home</b></td><td>Currency + period as compact selects, one “to check” pill, complete searchable &amp; filterable history (date-grouped, newest first). Collapsible filters; add control; settings in app bar.</td><td><b>New capability:</b> replaces the duplicate Home + Activity pair; search, filter chips, period and per-currency views are added functions; edit/delete carried over.</td></tr>
+    <tr><td><b>Review</b></td><td>Only ambiguous/failed-parse alerts; guided completion (amount + currency + direction) then record or ignore; invalid saves keep the sheet open with an inline reason.</td><td><b>Carried over</b> + guided completion sheet. Badge stays discoverable.</td></tr>
+    <tr><td><b>Add</b></td><td>Fast entry (amount keypad, compact currency chooser, direction, in-flow Save) with kind/status/who/account/note/date behind the optional details expander; bottom nav hidden behind an explicit Cancel.</td><td><b>Carried over</b>, promoted to a first-class action.</td></tr>
+    <tr><td><b>Settings</b></td><td>Currency, sources, permissions, export CSV, guide, paste-capture — all current rows keep their behaviour.</td><td><b>Carried over</b>, untouched.</td></tr>
+  </table>
+  </div>
+  </div>
+
+  <div class="foot" style="margin-top:1.5rem;">
+    Sandbox rules: Example data only, reset any time, currencies never mix in totals, own transfers and pending/failed records are excluded from totals, unclear alerts stay out until completed, no recording until required fields are valid. Native app was not modified in this round. Context7 W3C HTML docs (native button semantics, labels, keyboard activation) guided the controls; research: <a href="fresh-current-research.md">fresh-current-research.md</a>. Prototype: <a href="fresh-current-comparison.html">fresh-current-comparison.html</a> · spec: <a href="fresh-current-design.md">fresh-current-design.md</a>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ————————————————— sandbox state (example only) ————————————————— */
+const CURRENCIES = ['NGN','USD','GBP','EUR','KES','GHS']; // demo set, all 2-decimal exponents
+const ANCHOR = '2026-10-26'; // fixed sandbox "today"
+let entries = [], review = [], editingId = null, dirty=false;
+let filt = {period:'all', q:'', dir:null, src:null};
+let viewCur = 'NGN';
+
+/* money: integer minor units, strict 2-decimal input */
+const dp = /^\d+(\.\d{1,2})?$/;
+function toMinor(str){
+  const s = String(str).trim();
+  if(!dp.test(s)) return null;              // reject unknown / over-precision junk
+  const i = s.indexOf('.'), w = i<0 ? s : s.slice(0,i), f = i<0 ? '0' : s.slice(i+1);
+  const minor = parseInt(w,10)*100 + parseInt((f+'0').slice(0,2),10);
+  return Number.isSafeInteger(minor) && minor >= 0 ? minor : null;   // guard against unsafe huge inputs
+}
+function fmt(minor, cur){
+  const whole = Math.floor(minor/100), part = String(minor%100).padStart(2,'0');
+  return cur + ' ' + whole.toLocaleString('en-NG') + '.' + part;
+}
+/* date helpers on the fixed anchor */
+function dayOffset(dateStr){ // "2026-10-26" -> whole days before anchor
+  const a = new Date(ANCHOR+'T12:00:00'), d = new Date(dateStr+'T12:00:00');
+  return Math.round((a-d)/86400000);
+}
+function dayLabel(off){
+  if(off===0) return 'Today';
+  if(off===1) return 'Yesterday';
+  const d = new Date(ANCHOR+'T12:00:00'); d.setDate(d.getDate()-off);
+  return d.getDate()+' '+d.toLocaleString('en',{month:'short'});
+}
+
+function seed(){
+  entries = [
+    {id:'c', who:'Lunch test', kind:'Expense',      dir:'OUT', cur:'NGN', amtMinor:125050, off:0,  date:'2026-10-26', origin:'Manual',   status:'Completed', note:'Example', account:'Unassigned'},
+    {id:'b', who:'Ada. Ref',   kind:'Unclassified', dir:'OUT', cur:'NGN', amtMinor:850000, off:1,  date:'2026-10-25', origin:'Capture',  status:'Completed', note:'Example', account:'Unassigned'},
+    {id:'a', who:'Bob. Ref',   kind:'Unclassified', dir:'IN',  cur:'NGN', amtMinor:100000, off:24, date:'2026-10-02', origin:'Capture',  status:'Completed', note:'Example', account:'Unassigned'},
+  ];
+  review = [
+    {id:'r1', src:'Payment alert · Example', amount:'50.00', cur:'USD', dir:'UNSET', reason:'The alert shows money moving, but not which way it went.', grabbed:'Debit/credit alert, 20:41 — “You sent or received USD 50.00.”'},
+    {id:'r2', src:'Payment alert · Example', amount:null,    cur:'NGN', dir:'UNSET', reason:'The amount is not readable in the text of the alert.', grabbed:'…debited your account for “home delivery” on 24 Oct.'},
+  ];
+  editingId = null; dirty=false;
+  filt = {period:'all', q:'', dir:null, src:null}; viewCur='NGN';
+  resetAddDraft();
+}
+
+/* totals: Completed, non-reciprocal only. Own transfers (kind Transfer) excluded both legs. */
+function totalsFor(cur, dirOnly){
+  return entries.filter(e=>e.cur===cur && e.status==='Completed' && e.kind!=='Transfer' && e.dir===dirOnly)
+                .reduce((s,e)=>s+e.amtMinor,0);
+}
+
+/* ————————————— HOME ————————————— */
+const DIR_G_IN  = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0E7A55" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6M6.5 11.5L12 6l5.5 5.5"/></svg>';
+const DIR_G_OUT = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#17171A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6.5 12.5L12 18l5.5-5.5"/></svg>';
+const GFILTERS = [['dir-in','Money in'],['dir-out','Money out'],['cap','Captured'],['man','Manual']];
+
+function el(tag, cls, text){ const n=document.createElement(tag); if(cls)n.className=cls; if(text!=null)n.textContent=text; return n; }
+function chipBtn(label, selected, onclk){ const b=el('button','chip'+(selected?' sel':''),label); b.setAttribute('aria-pressed',selected); b.onclick=onclk; return b; }
+const PERIOD_DAYS = {'all':Infinity,'7':7,'30':30};
+const PERIOD_LABEL = {'all':'All time','7':'Last 7 days','30':'Last 30 days'};
+
+function setPeriod(p){ filt.period=p; renderHome(); }
+function setQ(v){ filt.q=v; renderHome(); }
+function setViewCur(c){ viewCur=c; renderHome(); }
+
+/* one matching pool drives BOTH the summary and the rows — same filter, one honest truth */
+function homePool(){
+  let pool = entries.filter(e=>e.cur===viewCur && e.off < PERIOD_DAYS[filt.period]);
+  if(filt.dir) pool = pool.filter(e=>e.dir===filt.dir);
+  if(filt.src) pool = pool.filter(e=>e.origin===filt.src);
+  const q = filt.q.trim().toLowerCase();
+  if(q) pool = pool.filter(e=>(e.who+' '+e.note+' '+e.account).toLowerCase().includes(q));
+  return pool;
+}
+
+function renderHome(){
+  const pool = homePool();
+  const in_  = pool.filter(e=>e.dir==='IN'  && e.kind!=='Transfer' && e.status==='Completed').reduce((s,e)=>s+e.amtMinor,0);
+  const out_ = pool.filter(e=>e.dir==='OUT' && e.kind!=='Transfer' && e.status==='Completed').reduce((s,e)=>s+e.amtMinor,0);
+  const net = in_ - out_;
+  document.getElementById('netLabel').textContent = net >= 0 ? 'Net received' : 'Net sent';
+  document.getElementById('netAmt').textContent = fmt(Math.abs(net), viewCur);
+  document.getElementById('inAmt').textContent  = fmt(in_, viewCur);
+  document.getElementById('outAmt').textContent = fmt(out_, viewCur);
+
+  // scope label: concise status line; the full explanation lives in the info details
+  const parts = ['Completed only · transfers excluded'];
+  const narrowed = filt.dir || filt.src || filt.q.trim();
+  if(narrowed) parts.push('filtered view');
+  document.getElementById('scopeNote').textContent = PERIOD_LABEL[filt.period] + ' · ' + viewCur + ' · ' + parts.join(' · ');
+  document.getElementById('periodLabel').textContent = 'Recorded activity · ' + viewCur;
+
+  // currency selector for view (compact native select)
+  const selCur = document.getElementById('viewCurSel');
+  if(!selCur.options.length) CURRENCIES.forEach(c=>selCur.appendChild(new Option(c, c)));
+  selCur.value = viewCur;
+  document.getElementById('periodSel').value = filt.period;
+
+  // filter chips (inside the collapsible Filters control)
+  const nActive = (filt.dir?1:0)+(filt.src?1:0)+(filt.q.trim()?1:0);
+  const fcount = document.getElementById('filtCount');
+  fcount.hidden = !nActive; fcount.textContent = String(nActive);
+  const fc = document.getElementById('fchips'); fc.textContent='';
+  GFILTERS.forEach(([key,label])=>{
+    fc.appendChild(chipBtn(label, filt[key]===key || (key==='cap'&&filt.src==='Capture') || (key==='man'&&filt.src==='Manual'), ()=>{
+      if(key==='cap'||key==='man'){
+        const src = key==='cap'?'Capture':'Manual';
+        filt.src = (filt.src===src)?null:src; filt.dir=null;
+      } else {
+        filt.dir = (filt.dir===key)?null:key; filt.src=null;
+      }
+      renderHome();
+    }));
+  });
+
+  // rows, date-grouped, newest first (Today on top)
+  const rowsEl = document.getElementById('rows'); rowsEl.textContent='';
+  const sorted = pool.slice().sort((a,b)=>a.off-b.off);
+  let lastDay=null;
+  sorted.forEach(e=>{
+    if(e.off!==lastDay){ lastDay=e.off; rowsEl.appendChild(el('div','dh',dayLabel(e.off))); }
+    const row = el('button','trow');
+    const dg = el('span','dot-g'+(e.dir==='IN'?'':' out'), null); dg.innerHTML = e.dir==='IN'?DIR_G_IN:DIR_G_OUT;
+    const lw = el('span','leadwrap');
+    const lead = el('span','lead',e.who||'Example entry');
+    const acc = e.account ? e.account.trim() : '';
+    const sub = el('span','sub', e.origin + (acc && acc.toLowerCase()!=='unassigned' ? ' · '+acc : ''));
+    if(e.kind==='Unclassified'){ const u=el('span','uncla','not classified'); sub.appendChild(u); }
+    const amtr = el('span','amtr');
+    const amt = el('span','amt', fmt(e.amtMinor,e.cur));
+    const dirw = el('span','amtdir', e.dir==='IN'?'In':'Out');
+    amtr.appendChild(amt); amtr.appendChild(dirw);
+    lw.appendChild(lead); lw.appendChild(sub);
+    row.appendChild(dg); row.appendChild(lw); row.appendChild(amtr);
+    row.setAttribute('aria-label', (e.who||'Entry')+' '+fmt(e.amtMinor,e.cur)+(e.dir==='IN'?' in':' out'));
+    row.onclick=()=>openDetail(e.id);
+    rowsEl.appendChild(row);
+  });
+  document.getElementById('homeEmpty').hidden = pool.length>0;
+
+  // review badge
+  const n = review.length;
+  document.getElementById('checkTxt').textContent = n + ' to check';
+  document.getElementById('checkPill').style.display = n ? '' : 'none';
+  document.getElementById('navBadge').textContent = n;
+  document.getElementById('navBadge').style.display = n ? '' : 'none';
+  document.getElementById('rvCountTab').textContent = n ? '· ' + n : '';
+}
+
+/* ————————————— REVIEW ————————————— */
+function renderReview(){
+  el('div',''); const list=document.getElementById('rvList'); list.textContent='';
+  review.forEach(r=>{
+    const c=el('div','rvcard');
+    const needAmt = r.amount==null;
+    const needCur = !r.cur || r.cur==='?';
+    const needDir = r.dir==='UNSET';
+    const need = needAmt?' an amount':(needCur?' a currency':'')+((needCur||needAmt||needDir)?'':' direction');
+    const tagTxt = needAmt||needCur||needDir ? ('Needs'+(needAmt?' a readable amount':needCur?' a currency':' a direction')) : 'Ready to record';
+    const tag = el('span','rvt'); tag.textContent = tagTxt;
+    const amt = el('div','rvamt', needAmt ? 'Amount unreadable' : fmt(toMinor(String(r.amount)) ?? 0, r.cur));
+    const reason = el('div','rvreason', r.reason);
+    const det = el('details'); const sum = el('summary',''); sum.textContent='Show the original alert';
+    const grab = el('div','grab', r.src+' — '+r.grabbed);
+    det.appendChild(sum); det.appendChild(grab);
+    const act = el('div','rvact');
+    const bEdit = el('button','btn mint','Edit'); bEdit.onclick=()=>openReviewEdit(r.id);
+    const bRec = el('button','btn quiet','Record'); bRec.style.color='var(--mint-deep)'; bRec.style.borderColor='var(--mint-soft)';
+    const resolvable = !needAmt && !needCur && r.dir!=='UNSET';
+    if(!resolvable) bRec.disabled = true, bRec.title='Complete the missing fields first';
+    bRec.onclick=()=>resolveReview(r.id);
+    const bIgn = el('button','btn quiet','Ignore'); bIgn.onclick=()=>ignoreReview(r.id);
+    act.appendChild(bEdit); act.appendChild(bRec); act.appendChild(bIgn);
+    if(needCur && r.dir!=='UNSET'){ const w=el('div','rvnote warn','Pick the currency to record it. Different currencies are kept separate, never summed.'); c.appendChild(w); }
+    c.appendChild(tag); c.appendChild(amt); c.appendChild(reason); c.appendChild(det); c.appendChild(act);
+    list.appendChild(c);
+  });
+  document.getElementById('rvEmpty').hidden = review.length>0;
+}
+
+function openReviewEdit(id){
+  const r = review.find(x=>x.id===id); if(!r) return;
+  const sheet = document.getElementById('sheet'); sheet.textContent='';
+  sheet.appendChild(el('div','grabber'));
+  sheet.appendChild(el('h3','',null)).textContent='Complete this entry';
+  sheet.appendChild(buildAmtField(r.amount==='?'?null:r.amount));
+  sheet.appendChild(fl('Currency'));
+  const curRow = el('div','chipscroll'); curRow.style.padding='0';
+  ['NGN','USD','GBP','EUR'].forEach(c=>curRow.appendChild(chipBtn(c, r.cur===c, ()=>{ r.cur=c; badge(); })));
+  sheet.appendChild(curRow);
+  sheet.appendChild(fl('Direction'));
+  const seg = el('div','seg'); seg.style.margin='0';
+  [['IN','In'],['OUT','Out'],['UNSET','Unclear']].forEach(([d,l])=>{
+    const b=el('button', (r.dir||'UNSET')===d?'sel':'', l); b.onclick=()=>{ r.dir=d; badge(); }; seg.appendChild(b);
+  });
+  sheet.appendChild(seg);
+  const badge = ()=>{ renderReview(); };
+  sheet.appendChild(note('Recording creates a real entry in this currency — NGN totals are untouched by non-NGN entries.'));
+  const act = el('div','rvact'); act.style.marginTop='14px';
+  const bSave = el('button','btn mint','Save entry');
+  bSave.onclick=()=>{
+    const raw = document.getElementById('rvAmt').value;
+    const minor = toMinor(raw.replace(',','.').replace(/,/g,''));
+    if(minor===null || minor<=0){ showSheetErr('Enter a valid amount with up to 2 decimals.'); return; }
+    if(r.dir==='UNSET' || r.cur==='?' || !r.cur){ showSheetErr('Pick a direction and currency before recording.'); return; }
+    r.amount = raw.trim(); r.cur = r.cur||'NGN';
+    if(resolveReview(id)) closeSheet();   // keep the dialog open with the inline reason if it could not record
+  };
+  const bIgn = el('button','btn quiet','Ignore'); bIgn.onclick=()=>{ ignoreReview(id); closeSheet(); };
+  const bCl = el('button','btn quiet','Close'); bCl.style.marginLeft='auto'; bCl.style.border='none'; bCl.onclick=closeSheet;
+  act.appendChild(bSave); act.appendChild(bIgn); act.appendChild(bCl);
+  sheet.appendChild(act);
+  const err = el('div','erv'); err.id='rverr'; err.hidden=true; err.className='err'; err.style.color='var(--fail)'; err.style.fontSize='.82rem';
+  sheet.appendChild(err);
+  openSheet();
+}
+function fl(t){ const d=el('div','fldlab',t); d.style.paddingLeft='0'; return d; }
+function note(t){ const p=el('p',null,t); p.style.fontSize='.8rem'; p.style.color='var(--ink3)'; p.style.margin='.6rem 0'; return p; }
+function buildAmtField(val){
+  const wrap = el('div','infield'); wrap.style.marginBottom='10px';
+  const lab = el('label',''); lab.htmlFor='rvAmt'; lab.textContent='Amount (up to 2 decimals)';
+  const inp = document.createElement('input'); inp.id='rvAmt'; inp.type='text'; inp.inputMode='decimal';
+  if(val!=null) inp.value = val; inp.placeholder='e.g. 50.00';
+  wrap.appendChild(lab); wrap.appendChild(inp);
+  return wrap;
+}
+function showSheetErr(msg){ const e=document.getElementById('rverr'); if(e){e.hidden=false;e.textContent=msg;} }
+
+function ignoreReview(id){
+  review = review.filter(r=>r.id!==id); dirty=true;
+  renderAll();
+  toastSay('Ignored (sandbox). Nothing was counted; nothing was deleted.');
+}
+/* Record = create an accepted real sample entry in the chosen currency, then remove the review item. */
+function resolveReview(id){
+  const r = review.find(x=>x.id===id); if(!r) return false;
+  if(r.amount==null){ toastSay('Add the amount first — Edit and save a readable amount.'); openReviewEdit(id); return false; }
+  const minor = toMinor(String(r.amount).replace(',','.'));
+  if(minor===null || minor<=0){ toastSay('That amount is not valid (needs ≤2 decimals).'); return false; }
+  if(r.dir==='UNSET' || r.cur==='?' || !r.cur){ toastSay('Complete direction and currency first.'); return false; }
+  entries.unshift({id:'r'+id, who:'Alert · '+(r.src.replace(' · Example','')), kind:'Unclassified', dir:r.dir, cur:r.cur, amtMinor:minor, off:0, date:ANCHOR, origin:'Capture', status:'Completed', note:'Recorded from Review (example)', account:'Unassigned'});
+  review = review.filter(x=>x.id!==id); dirty=true;
+  renderAll();
+  if(r.cur!=='NGN') toastSay('Recorded under '+r.cur+'. It is never summed into NGN totals.');
+  else toastSay('Recorded under NGN (example).');
+  return true;
+}
+
+/* ————————————— ADD ————————————— */
+let addAmt='', addCur='NGN', addDir='OUT', kind='Unclassified', stat='Completed';
+const KINDS=['Expense','Income','Transfer','Refund','Fee','Unclassified'];
+const STATUSES=['Completed','Pending','Failed'];
+const KIND_DIR = {Expense:'OUT', Income:'IN', Fee:'OUT'}; // matches backend LedgerStore: only Income forces IN, Expense/Fee force OUT; Transfer and Refund allow both directions
+const KIND_LABEL = {Transfer:'Own transfer'}; // display name only; internal kind key stays "Transfer"
+const KIND_H = {Expense:'Expense must be money OUT', Income:'Income must be money IN', Fee:'A fee goes OUT'};
+
+function resetAddDraft(){
+  addAmt=''; addCur='NGN'; addDir='OUT'; kind='Unclassified'; stat='Completed'; editingId=null;
+  const who=document.getElementById('fWho'); who.value='';
+  document.getElementById('fAcc').value='';
+  document.getElementById('fNote').value='';
+  document.getElementById('fDate').value=ANCHOR;
+  document.getElementById('saveBtn').textContent='Save transaction';
+  document.getElementById('saveErr').hidden=true;
+  document.getElementById('moreFields').classList.remove('on');
+  document.getElementById('moreBtn').setAttribute('aria-expanded','false');
+  renderAdd();
+}
+function openAdd(){ resetAddDraft(); show('add'); }
+function backFromAdd(){ resetAddDraft(); show('home'); }
+function renderAdd(){
+  const big=document.getElementById('amtBig');
+  big.textContent=''; const live = el('span', addAmt?'':'dim', addAmt||'0');
+  big.appendChild(live);
+  const selC=document.getElementById('addCurSel');
+  if(!selC.options.length) CURRENCIES.forEach(c=>selC.appendChild(new Option(c, c)));
+  selC.value = addCur;
+  document.getElementById('dir-in').classList.toggle('sel', addDir==='IN');
+  document.getElementById('dir-out').classList.toggle('sel', addDir==='OUT');
+  const mir=document.querySelector('#dir-in'), mor=document.querySelector('#dir-out');
+  mir.setAttribute('aria-pressed', addDir==='IN'); mor.setAttribute('aria-pressed', addDir==='OUT');
+  const kc=document.getElementById('kindChips'); kc.textContent='';
+  KINDS.forEach(k=>kc.appendChild(chipBtn(KIND_LABEL[k]||k, k===kind, ()=>{
+    kind=k;
+    if(KIND_DIR[k] && addDir!==KIND_DIR[k]){ addDir=KIND_DIR[k]; } // snap direction with the kind
+    renderAdd();
+  })));
+  const sc=document.getElementById('statChips'); sc.textContent='';
+  STATUSES.forEach(s=>sc.appendChild(chipBtn(s, s===stat, ()=>{ stat=s; renderAdd(); })));
+}
+function setAddCur(c){ addCur = CURRENCIES.includes(c) ? c : addCur; renderAdd(); }
+function setDir(d){
+  if(KIND_DIR[kind] && d!==KIND_DIR[kind]){
+    const e=document.getElementById('saveErr'); e.hidden=false;
+    e.textContent=KIND_H[kind]+' — keep the direction or switch the kind.';
+    return;
+  }
+  addDir=d; document.getElementById('saveErr').hidden=true; renderAdd();
+}
+function buildKeypad(){
+  const kp=document.getElementById('kpad');
+  ['1','2','3','4','5','6','7','8','9','.','0','⌫'].forEach(k=>{
+    const b=document.createElement('button');
+    b.textContent = k==='⌫' ? '⌫' : k;
+    b.setAttribute('aria-label', k==='⌫' ? 'Clear last digit' : (k==='.' ? 'Decimal point' : 'Digit '+k));
+    b.onclick=()=>{
+      if(k==='⌫'){ addAmt=addAmt.slice(0,-1).replace(/\.$/,''); }
+      else if(k==='.'){ if(!addAmt.includes('.')) addAmt=(addAmt||'0')+'.'; }
+      else { const f=addAmt.split('.')[1]; if(f===undefined) addAmt=(addAmt==='0'?k:addAmt+k); else if(f.length<2) addAmt+=k; }
+      document.getElementById('saveErr').hidden=true;
+      renderAdd();
+    };
+    kp.appendChild(b);
+  });
+}
+function toggleMore(){
+  const f=document.getElementById('moreFields'); const on=f.classList.toggle('on');
+  document.getElementById('moreBtn').setAttribute('aria-expanded', on);
+}
+function saveDemo(){
+  // read the on-screen amount literally from addAmt, not textContent (the dim '0' is not a value)
+  const err=document.getElementById('saveErr');
+  const showErr = m=>{ err.hidden=false; err.textContent=m; };
+  const minor = toMinor(addAmt);
+  if(minor===null){ showErr('Enter a valid amount — digits only, up to 2 decimals.'); return; }
+  if(minor<=0){ showErr('Enter an amount greater than 0 to record this.'); return; }
+  if(!CURRENCIES.includes(addCur)){ showErr('Pick a supported entry currency.'); return; }  // addCur verified at save
+  if(KIND_DIR[kind] && addDir!==KIND_DIR[kind]){ showErr(KIND_H[kind]+' — direction and kind don’t match.'); return; }
+  if(addDir!=='IN' && addDir!=='OUT'){ showErr('Pick In or Out.'); return; }
+  const dateVal = document.getElementById('fDate').value || ANCHOR;
+  if(dayOffset(dateVal)<0){ showErr('Dates before today are kept, but the sandbox clock is 26 Oct 2026.'); }
+  const who=document.getElementById('fWho').value.trim();
+  const acc=document.getElementById('fAcc').value.trim();
+  const note=document.getElementById('fNote').value.trim();
+  if(editingId){
+    const e=entries.find(x=>x.id===editingId);
+    if(e){ Object.assign(e,{who:who, dir:addDir, cur:addCur, kind, status:stat, amtMinor:minor, date:dateVal, off:dayOffset(dateVal), account:acc||'Unassigned', note:note}); } // cleared optional fields stay cleared
+    editingId=null;
+    document.getElementById('saveBtn').textContent='Save transaction';
+    toastSay('Updated (sandbox) — same record, not a duplicate.');
+  } else {
+    entries.unshift({id:'x'+Date.now(), who:who||'Manual entry', kind, dir:addDir, cur:addCur, amtMinor:minor, date:dateVal, off:dayOffset(dateVal), origin:'Manual', status:stat, note:note||'Example sandbox entry', account:acc||'Unassigned'});
+    toastSay('Example saved — sandbox only. Reset any time.');
+  }
+  document.getElementById('saveErr').hidden=true;
+  viewCur = addCur; // land on the currency just used so the entry is visible
+  renderAll(); show('home'); resetAddDraft();
+}
+
+/* ————————————— SHEETS, DETAIL, TOAST ————————————— */
+function openDetail(id){
+  const e=entries.find(x=>x.id===id); if(!e) return;
+  const sheet=document.getElementById('sheet'); sheet.textContent='';
+  sheet.appendChild(el('div','grabber'));
+  const amt = el('div','rvamt', fmt(e.amtMinor,e.cur)); amt.style.fontSize='1.7rem'; amt.style.letterSpacing='-.03em';
+  const sub = el('div','tagchip', (e.dir==='IN'?'money in':'money out')+' · status: '+e.status+' · Example');
+  sheet.appendChild(amt); sheet.appendChild(sub);
+  sheet.appendChild(el('p',null,(e.who||'Entry')+' — '+(e.kind==='Unclassified'?'not classified yet.':'kind “'+e.kind+'”.'))).style.cssText='margin:.3rem 0 .6rem;color:var(--ink2);font-size:.9rem;';
+  const kvRow=(k,v)=>{ const r=el('div','kv'); const a=el('span','k',k); const b=el('span','v',v); r.appendChild(a); r.appendChild(b); return r; };
+  sheet.appendChild(kvRow('Kind', KIND_LABEL[e.kind]||e.kind));
+  sheet.appendChild(kvRow('Status', e.status));
+  sheet.appendChild(kvRow('Account', e.account));
+  sheet.appendChild(kvRow('Came in as', e.origin));
+  sheet.appendChild(kvRow('Date', e.date));
+  if(e.kind==='Transfer') sheet.appendChild(note('Own transfer: excluded from Money in / Money out so legs never cancel by double counting.'));
+  const act=el('div','rvact'); act.style.marginTop='12px';
+  const bE=el('button','btn mint','Edit'); bE.onclick=()=>editRow(id);
+  const bD=el('button','btn quiet','Delete'); bD.onclick=()=>deleteRow(id);
+  const bC=el('button','btn quiet','Close'); bC.style.marginLeft='auto'; bC.style.color='var(--ink3)'; bC.style.border='none'; bC.onclick=closeSheet;
+  act.appendChild(bE); act.appendChild(bD); act.appendChild(bC);
+  sheet.appendChild(act);
+  openSheet();
+}
+function editRow(id){
+  const e=entries.find(x=>x.id===id); if(!e) return;
+  closeSheet();            // close the detail sheet before opening the editor behind it
+  show('add'); resetAddDraft();
+  editingId=id;
+  document.getElementById('fWho').value=e.who;
+  document.getElementById('fAcc').value=e.account;
+  document.getElementById('fNote').value=e.note;
+  document.getElementById('fDate').value=e.date;
+  addCur=e.cur; addDir=e.dir; kind=e.kind; stat=e.status;
+  addAmt=(e.amtMinor/100).toFixed(2);
+  document.getElementById('saveBtn').textContent='Save changes';
+  renderAdd();
+  toastSay('Editing this record — saving updates it in place.');
+}
+function deleteRow(id){
+  entries=entries.filter(x=>x.id!==id); dirty=true;
+  closeSheet(); renderAll();
+  toastSay('Deleted (sandbox). Reset restores the examples.');
+}
+let sheetPrevFocus=null;
+function openSheet(){
+  const s=document.getElementById('sheet');
+  sheetPrevFocus=document.activeElement;
+  s.classList.add('on'); document.getElementById('scrim').classList.add('on');
+  const f=s.querySelector('button,input'); if(f) f.focus();
+}
+function closeSheet(){
+  document.getElementById('sheet').classList.remove('on');
+  document.getElementById('scrim').classList.remove('on');
+  if(sheetPrevFocus && sheetPrevFocus.focus) sheetPrevFocus.focus();
+  sheetPrevFocus=null;
+}
+document.addEventListener('keydown', ev=>{
+  if(ev.key==='Escape'){
+    const s=document.getElementById('sheet');
+    if(s.classList.contains('on')) closeSheet();
+  }
+});
+let tT;
+function toastSay(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('on');
+  clearTimeout(tT); tT=setTimeout(()=>t.classList.remove('on'), 2400);
+}
+function settingsNote(){
+  const sheet=document.getElementById('sheet'); sheet.textContent='';
+  sheet.appendChild(el('div','grabber'));
+  sheet.appendChild(el('h3',null)).textContent='Settings';
+  sheet.appendChild(el('p',null,'Settings keeps every function it has today — currency picker, capture sources, permissions, export CSV, the setup guide, paste-capture. This proposal doesn’t redesign it yet; the spec records where it lives in the new map.')).style.cssText='font-size:.88rem;color:var(--ink2);line-height:1.5;';
+  const ok=el('button','btn mint block','Got it'); ok.onclick=closeSheet;
+  sheet.appendChild(ok); openSheet();
+}
+
+/* ————————————— tabs, reset, reduced motion ————————————— */
+function show(s){
+  ['home','review','add'].forEach(k=>{
+    document.getElementById('s-'+k).classList.toggle('on', k===s);
+    document.getElementById('t-'+k).setAttribute('aria-selected', k===s);
+    const nb=document.getElementById('n-'+k); if(nb) nb.classList.toggle('on', k===s);
+  });
+  document.getElementById('phone').classList.toggle('addmode', s==='add'); // hide bottom nav on Add (explicit Cancel instead)
+  if(s==='add' && !editingId) {} // drafts only reset via openAdd/save/edit, not tab switches
+}
+document.getElementById('n-home')&&void 0;
+const rmBtn=document.getElementById('rmBtn');
+rmBtn.onclick=()=>{
+  const on=document.documentElement.classList.toggle('rm');
+  rmBtn.setAttribute('aria-pressed', on);
+  rmBtn.textContent='Reduced motion: '+(on?'on':'off');
+};
+document.getElementById('resetAll').onclick=()=>{
+  seed(); renderAll(); show('home');
+  toastSay('Examples restored — ledger, review, drafts and filters are back to the seeded state.');
+};
+
+/* one render pass for every destination — kept before init */
+function renderAll(){ renderHome(); renderReview(); renderAdd(); }
+
+seed(); buildKeypad(); renderAll();
+</script>
+</body>
+</html>
