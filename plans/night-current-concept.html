@@ -1,0 +1,991 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cashflow — night current concept</title>
+<style>
+  /* ————— outer chrome follows the host theme; the phone is dark-native on its own palette ————— */
+  html{background:transparent;}
+  body{margin:0;color:var(--foreground,#17171A);background:transparent;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;font-size:16px;}
+  .wrap{max-width:728px;margin:0 auto;padding:24px 0 56px;}
+  .toper{display:flex;align-items:center;gap:.55rem;padding:0 16px;}
+  .toper .mark{width:26px;height:26px;border-radius:8px;background:#1A1D1E;display:inline-grid;place-items:center;flex:0 0 auto;}
+  .toper h1{font-size:.95rem;letter-spacing:-.01em;margin:0;font-weight:650;}
+  .cuenote{font-size:.78rem;color:var(--muted-foreground,#55555E);margin-left:auto;display:flex;align-items:center;gap:.35rem;}
+  .tools{display:flex;gap:.3rem;align-items:center;padding:6px 12px 0;}
+  .toolico{border:none;background:transparent;color:var(--muted-foreground,#6E6E78);width:44px;height:44px;border-radius:12px;
+    display:grid;place-items:center;cursor:pointer;transition:transform .16s var(--ease),background .16s;}
+  .toolico:active{transform:scale(.96);}
+  .toolico[aria-selected="true"]{color:var(--accent,#0E7A55);background:rgba(43,223,156,.12);}
+  .toolico.rmon[aria-pressed="true"]{background:rgba(0,0,0,.07);}
+  .toolspacer{flex:1;}
+  details.board{padding:0 16px;margin-top:2rem;}
+  details.board summary{cursor:pointer;min-height:44px;display:flex;align-items:center;gap:.45rem;font-weight:600;font-size:.88rem;color:var(--accent,#0E7A55);}
+  details.board .inner{font-size:.86rem;color:var(--muted-foreground,#55555E);line-height:1.55;padding-top:.35rem;}
+  .mapscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  table.map{border-collapse:collapse;width:100%;min-width:520px;font-size:.83rem;margin:.4rem 0 .8rem;}
+  table.map td,table.map th{border-bottom:1px solid rgba(128,128,128,.18);padding:8px 10px;text-align:left;vertical-align:top;line-height:1.45;}
+  table.map th{font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted-foreground,#6E6E78);}
+  :where(.toper,.tools,details.board) a{color:var(--accent,#0E7A55);}
+  .boardnote{margin:.2rem 0 0;color:var(--muted-foreground,#55555E);}
+
+  /* —————————————— PHONE · dark native —————————————— */
+  .phone{position:relative;max-width:440px;margin:14px auto 0;background:#101213;border-radius:34px;
+    border:1px solid rgba(245,244,238,.08);box-shadow:0 18px 48px -20px rgba(0,0,0,.55);overflow:hidden;}
+  /* palette isolation: host defaults must not leak into the dark phone */
+  .phone{color:#F5F4EE;color-scheme:dark;}
+  .phone :where(button,input,select,textarea){color:#F5F4EE;background-color:#101213;font-family:inherit;}
+  .phone :where(input,textarea)::placeholder{color:#5E666B;}
+  .phone :where(a){color:#E1F58C;}
+  .ph-status{display:flex;justify-content:space-between;align-items:center;padding:10px 18px 0;font-size:.7rem;font-weight:600;color:#A0A7A6;letter-spacing:.04em;}
+  .ph-status .mono{display:inline-flex;align-items:center;gap:.4em;}
+  .ph-status .ex{color:#A0A7A6;}
+  .ph-body{min-height:660px;}
+  .screen{display:none;padding:2px 0 128px;animation:sfade .18s var(--ease);}
+  .screen.on{display:block;}
+  @keyframes sfade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+  :root{--ease:cubic-bezier(.22,.9,.3,1);}
+  /* one short stagger on a real tab switch only */
+  @keyframes rowin{from{opacity:0;transform:translateY(7px);}to{opacity:1;transform:none;}}
+  .trow.sw{animation:rowin .2s var(--ease) both;}
+
+  .ph-head{display:flex;align-items:center;gap:.5rem;padding:10px 16px 6px;}
+  .ph-head .appmono{width:30px;height:30px;border-radius:10px;background:#1A1D1E;display:grid;place-items:center;flex:0 0 auto;}
+  .ph-head .spacer{flex:1;}
+  .ictl{border:none;background:#1A1D1E;color:#A0A7A6;width:44px;height:44px;border-radius:14px;display:grid;place-items:center;cursor:pointer;transition:transform .16s var(--ease),color .16s,background .16s;}
+  .ictl:active{transform:scale(.96);}
+  .ictl.on{color:#E1F58C;background:rgba(225,245,140,.10);box-shadow:inset 0 0 0 1px rgba(225,245,140,.30);}
+  .ictl.dirty{color:#E1F58C;}
+  .ictl:focus-visible,.dock button:focus-visible,.keypad button:focus-visible,.seg button:focus-visible{outline:2px solid #E1F58C;outline-offset:2px;}
+
+  /* on-demand search + filter controls */
+  .revealfld{padding:2px 16px 6px;display:none;gap:.5rem;}
+  .revealfld.on{display:flex;}
+  .srch{flex:1;display:flex;align-items:center;gap:.5rem;background:#1A1D1E;border-radius:14px;padding:0 12px;min-width:0;}
+  .srch input{border:none;background:transparent;font:inherit;font-size:.95rem;color:#F5F4EE;outline:none;min-height:44px;flex:1;min-width:0;}
+  .fwrap{display:none;gap:.4rem;flex-wrap:wrap;padding:0 16px 8px;}
+  .fwrap.on{display:flex;}
+  .fchip{border:none;background:#1A1D1E;color:#A0A7A6;font:inherit;font-size:.82rem;font-weight:600;padding:.35em .85em;border-radius:999px;min-height:44px;cursor:pointer;transition:transform .12s var(--ease);}
+  .fchip:active{transform:scale(.96);}
+  .fchip.sel{background:#E1F58C;color:#1B2405;}
+
+  /* compact currency/period affordances */
+  .minisel{appearance:none;-webkit-appearance:none;border:none;background:#1A1D1E;color:#F5F4EE;font:inherit;font-size:.82rem;font-weight:650;
+    padding:0 26px 0 12px;border-radius:12px;min-height:44px;cursor:pointer;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' stroke='%23A0A7A6' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat:no-repeat;background-position:right 10px center;}
+
+  /* In / Out magnitudes */
+  .iopair{display:flex;gap:12px;padding:4px 16px 2px;}
+  .io{flex:1;background:#1A1D1E;border-radius:18px;padding:12px 14px 13px;display:flex;flex-direction:column;gap:7px;min-width:0;}
+  .io .iotop{display:flex;align-items:center;justify-content:space-between;gap:.6rem;}
+  .io .glyph{width:34px;height:34px;border-radius:12px;display:grid;place-items:center;flex:0 0 auto;background:rgba(225,245,140,.10);color:#E1F58C;}
+  .io.out .glyph{background:rgba(245,244,238,.06);color:#A0A7A6;}
+  .io .iocode{font-size:.72rem;font-weight:700;letter-spacing:.09em;color:#A0A7A6;}
+  .io .val{font-weight:700;font-variant-numeric:tabular-nums;font-size:1.05rem;letter-spacing:-.01em;white-space:normal;overflow:visible;min-width:0;}
+  .io .val.long{font-size:.95rem;letter-spacing:0;}
+  .iotrail{display:flex;align-items:baseline;gap:.9rem;padding:8px 18px 4px;}
+  .iotrail .net{font-size:.82rem;color:#A0A7A6;font-weight:600;}
+  .iotrail .netv{font-weight:700;font-variant-numeric:tabular-nums;font-size:.92rem;color:#F5F4EE;}
+  .iotrail .netv.pos{color:#E1F58C;}
+
+  /* date-grouped edge-to-edge feed */
+  .dh{font-size:.74rem;font-weight:700;color:#A0A7A6;padding:14px 18px 5px;text-transform:uppercase;letter-spacing:.09em;}
+  .trow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;width:100%;
+    padding:11px 16px;background:transparent;border:none;border-top:1px solid rgba(245,244,238,.055);
+    font:inherit;text-align:left;cursor:pointer;min-height:64px;box-sizing:border-box;transition:background .15s;}
+  .trow:focus-visible{outline:2px solid #E1F58C;outline-offset:-2px;}
+  .trow:active{background:#16191A;}
+  .av{width:40px;height:40px;border-radius:14px;display:grid;place-items:center;flex:0 0 auto;font-weight:750;font-size:1rem;letter-spacing:-.02em;
+    background:#1A1D1E;color:#F5F4EE;position:relative;}
+  .av .dot{position:absolute;right:-2px;bottom:-2px;width:12px;height:12px;border-radius:6px;background:#E1F58C;display:none;place-items:center;}
+  .trow.is-in .av .dot{display:grid;}
+  .av svg{width:16px;height:16px;}
+  .trow.is-in .av{background:rgba(225,245,140,.10);color:#E1F58C;}
+  .trow .leadwrap{min-width:0;}
+  .trow .lead{font-size:1.02rem;font-weight:650;letter-spacing:-.01em;display:block;overflow-wrap:break-word;min-width:0;}
+  .trow .sub{font-size:.8rem;color:#A0A7A6;margin-top:2px;display:block;overflow-wrap:break-word;min-width:0;}
+  .trow .sub:empty{display:none;}
+  .trow .amtr{min-width:0;text-align:right;}
+  .trow .amt{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;font-size:1.02rem;letter-spacing:-.01em;}
+  .trow .dirico{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:6px;vertical-align:-3px;margin-left:5px;color:#A0A7A6;background:transparent;}
+  .trow.is-in .dirico{color:#E1F58C;}
+  .status-quiet{font-size:.76rem;color:#A0A7A6;}
+  .status-pending{color:#B7A9E8;font-weight:650;}
+  .status-failed{color:#F08578;font-weight:650;}
+  .emptyone{margin:28px 18px;text-align:center;color:#A0A7A6;font-size:.88rem;line-height:1.5;}
+  .emptyone b{color:#F5F4EE;display:block;font-size:.98rem;margin-bottom:.25rem;}
+
+  /* —————————————— icon-only floating dock —————————————— */
+  .dock{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;gap:10px;
+    padding:10px 16px calc(12px + env(safe-area-inset-bottom,0px));pointer-events:none;}
+  .phone.addmode .dock,.phone.sheetopen .dock{display:none;}
+  .dockinner{pointer-events:auto;display:flex;align-items:center;gap:8px;background:rgba(26,29,30,.92);
+    backdrop-filter:blur(10px);border:1px solid rgba(245,244,238,.09);border-radius:26px;padding:7px;box-shadow:0 12px 30px -14px rgba(0,0,0,.7);}
+  .dock button{border:none;background:transparent;color:#A0A7A6;width:48px;height:48px;border-radius:18px;display:grid;place-items:center;cursor:pointer;
+    transition:transform .16s var(--ease),background .16s,color .16s;position:relative;}
+  .dock button:active{transform:scale(.96);}
+  .dock button[aria-current="page"]{background:#262B2C;color:#E1F58C;box-shadow:inset 0 0 0 1px rgba(225,245,140,.22);}
+  .dock button svg{width:23px;height:23px;}
+  .dock button.add{width:60px;height:60px;border-radius:22px;background:#E1F58C;color:#1B2405;box-shadow:0 10px 24px -10px rgba(225,245,140,.5);}
+  .dock button.add:active{transform:scale(.96);}
+  .badge{position:absolute;top:5px;right:5px;min-width:17px;height:17px;border-radius:9px;background:#B7A9E8;color:#191327;font-size:.66rem;font-weight:750;display:grid;place-items:center;padding:0 4px;letter-spacing:0;}
+
+  /* —————————————— review: one focused question —————————————— */
+  .rvbar{display:flex;align-items:center;justify-content:space-between;}
+  .rvbar .prog{font-variant-numeric:tabular-nums;font-weight:700;font-size:.86rem;color:#A0A7A6;letter-spacing:.06em;}
+  .rvstage{background:#1A1D1E;border-radius:22px;margin:10px 16px 0;padding:18px 18px 16px;}
+  .rvsrc{display:inline-flex;align-items:center;gap:.4em;font-size:.78rem;font-weight:600;color:#A0A7A6;}
+  .rvamt{font-size:2.1rem;font-weight:750;letter-spacing:-.03em;font-variant-numeric:tabular-nums;margin:.45rem 0 .05rem;}
+  .rvamt.miss{color:#B7A9E8;}
+  .rvq{font-size:1rem;font-weight:650;color:#F5F4EE;margin:.7rem 0 .55rem;}
+  .ioq{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .ioq button{border:none;background:#262B2C;color:#A0A7A6;font:inherit;min-height:56px;border-radius:16px;cursor:pointer;
+    display:grid;place-items:center;align-content:center;gap:2px;transition:transform .16s var(--ease),background .16s;}
+  .ioq button:active{transform:scale(.96);}
+  .ioq button[aria-pressed="true"]{background:#E1F58C;color:#1B2405;}
+  .tinylab{font-size:.7rem;font-weight:750;letter-spacing:.06em;}
+  .rvinline{margin-top:10px;display:none;flex-direction:column;gap:8px;}
+  .rvinline.on{display:flex;}
+  .amtfield{background:#262B2C;border-radius:14px;padding:7px 12px;}
+  .amtfield label{display:block;font-size:.7rem;font-weight:700;color:#A0A7A6;text-transform:uppercase;letter-spacing:.07em;}
+  .amtfield input{border:none;outline:none;background:transparent;font:inherit;font-size:1.05rem;font-variant-numeric:tabular-nums;color:#F5F4EE;width:100%;min-height:34px;box-sizing:border-box;}
+  .amtfield input:focus{outline:2px solid #E1F58C;outline-offset:-2px;}
+  .seg{display:flex;gap:6px;}
+  .seg button{flex:1;border:none;background:#262B2C;color:#A0A7A6;font:inherit;font-size:.84rem;font-weight:650;min-height:46px;border-radius:13px;cursor:pointer;display:grid;place-items:center;transition:transform .16s var(--ease);}
+  .seg button:active{transform:scale(.96);}
+  .seg button[aria-pressed="true"]{background:#E1F58C;color:#1B2405;}
+  .rvquote{margin-top:10px;background:#101213;border-radius:12px;padding:9px 11px;font-size:.8rem;color:#A0A7A6;font-variant-numeric:tabular-nums;line-height:1.5;}
+  .rvact{display:flex;gap:.5rem;align-items:center;margin-top:14px;}
+  .btn{border:none;font:inherit;font-weight:700;font-size:.9rem;border-radius:16px;min-height:48px;padding:0 1.2em;cursor:pointer;transition:transform .16s var(--ease),background .16s;display:inline-flex;align-items:center;gap:.45rem;justify-content:center;}
+  .btn:active{transform:scale(.96);}
+  .btn.citron{background:#E1F58C;color:#1B2405;flex:1;}
+  .btn.ghost{background:transparent;color:#A0A7A6;border:1px solid rgba(245,244,238,.12);}
+  .btn.red{background:transparent;color:#F08578;border:1px solid rgba(240,133,120,.35);}
+  .btn.block{width:100%;}
+  .ignico{border:none;background:transparent;color:#A0A7A6;width:48px;height:48px;border-radius:14px;display:grid;place-items:center;cursor:pointer;transition:transform .16s var(--ease);}
+  .ignico:active{transform:scale(.96);}
+  .erv{font-size:.82rem;color:#F08578;line-height:1.4;margin-top:8px;}
+  .rvalert{padding:8px 16px 0;}
+  details.alertdet summary{list-style:none;cursor:pointer;min-height:44px;display:inline-flex;align-items:center;gap:.45rem;font-size:.82rem;font-weight:650;color:#A0A7A6;}
+  details.alertdet summary::-webkit-details-marker{display:none;}
+  .rvdone{margin:14px 18px 0;background:rgba(225,245,140,.08);color:#E1F58C;border-radius:18px;padding:14px;text-align:center;font-size:.88rem;font-weight:600;}
+  .rvdone svg{display:block;margin:0 auto 6px;}
+
+  /* —————————————— add: full-screen calculator —————————————— */
+  .addhead{display:flex;align-items:center;justify-content:space-between;padding:10px 16px 4px;}
+  .addhead .ent{font-size:.74rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#A0A7A6;}
+  .amtstage{padding:8px 16px 2px;text-align:left;}
+  .amt-big{font-size:3.4rem;font-weight:750;letter-spacing:-.04em;font-variant-numeric:tabular-nums;min-height:1.25em;color:#F5F4EE;}
+  .amt-big.dim{color:#3C4346;}
+  .moneyrow{display:flex;gap:.5rem;align-items:center;margin:8px 16px 8px;}
+  .moneyrow .seg{margin:0;flex:1;}
+  .moneyrow .minisel{flex:0 0 auto;}
+  .morel{display:flex;align-items:center;gap:.5rem;margin:0 16px 8px;border:none;background:#1A1D1E;color:#A0A7A6;font:inherit;font-size:.86rem;font-weight:650;min-height:44px;padding:0 14px;border-radius:14px;cursor:pointer;width:fit-content;}
+  .morel:active{transform:scale(.98);}
+  .fieldlines{margin:0 16px;display:none;flex-direction:column;gap:8px;padding-bottom:4px;}
+  .fieldlines.on{display:flex;}
+  .infield{background:#1A1D1E;border-radius:14px;padding:8px 12px;}
+  .infield input{border:none;outline:none;background:transparent;font:inherit;font-size:.95rem;color:#F5F4EE;width:100%;min-height:30px;box-sizing:border-box;}
+  .infield input:focus{outline:2px solid #E1F58C;outline-offset:-2px;}
+  .infield label{font-size:.7rem;font-weight:700;color:#A0A7A6;text-transform:uppercase;letter-spacing:.07em;}
+  .saveline{display:flex;gap:.5rem;align-items:center;padding:6px 16px 2px;}
+  .saveline .err{font-size:.82rem;color:#F08578;margin:0 0 6px;line-height:1.4;padding:0 18px;}
+  .keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px 14px 6px;}
+  .keypad button{border:none;background:transparent;font:inherit;font-size:1.45rem;font-weight:650;color:#F5F4EE;min-height:56px;border-radius:18px;cursor:pointer;transition:background .1s,transform .16s var(--ease);}
+  .keypad button:active{background:#1A1D1E;transform:scale(.96);}
+  .keypad .kbx{color:#A0A7A6;}
+  .keypad .kbx svg{width:24px;height:24px;display:block;margin:0 auto;}
+
+  /* —————————————— sheet, scrim, toast —————————————— */
+  .scrim{position:absolute;inset:0;background:rgba(6,7,7,.55);opacity:0;pointer-events:none;transition:opacity .2s;}
+  .scrim.on{opacity:1;pointer-events:auto;}
+  .sheet{position:absolute;left:0;right:0;bottom:0;background:#1A1D1E;border-radius:26px 26px 0 0;border-top:1px solid rgba(245,244,238,.08);
+    padding:8px 18px calc(18px + env(safe-area-inset-bottom,0px));transform:translateY(105%);transition:transform .26s var(--ease);max-height:82%;overflow-y:auto;}
+  .sheet:not(.on){visibility:hidden;}
+  .sheet.on{transform:none;}
+  .grabber{width:36px;height:4px;border-radius:2px;background:rgba(245,244,238,.14);margin:4px auto 12px;}
+  .kv{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid rgba(245,244,238,.06);font-size:.9rem;}
+  .kv .k{color:#A0A7A6;} .kv .v{font-weight:650;font-variant-numeric:tabular-nums;text-align:right;}
+  .toast{position:absolute;left:14px;right:14px;bottom:150px;background:#E1F58C;color:#1B2405;border-radius:16px;padding:11px 14px;
+    font-size:.85rem;font-weight:600;line-height:1.4;opacity:0;transform:translateY(8px);transition:opacity .22s,transform .22s var(--ease);
+    pointer-events:none;box-shadow:0 12px 28px -12px rgba(0,0,0,.6);}
+  .toast.on{opacity:1;transform:none;}
+  .setnote{font-size:.9rem;color:#A0A7A6;line-height:1.55;margin:.3rem 0 .6rem;}
+
+  /* reduced motion: manual toggle + system preference */
+  @media(prefers-reduced-motion:reduce){.scrim,.sheet,.screen,.trow,.btn,.dock button,.ioq button,.seg button{transition:none !important;animation:none !important;}}
+  html.rm .scrim,html.rm .sheet,html.rm .screen,html.rm .trow,html.rm .btn,html.rm .dock button,html.rm .ioq button,
+  html.rm .seg button,html.rm .keypad button,html.rm .toolico,html.rm .ictl{transition:none !important;animation:none !important;}
+  html.rm .trow.sw,.dock button.add,.trow{transition:none !important;animation:none !important;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="toper">
+    <span class="mark" aria-hidden="true">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 14c3.5 0 3.5-6 8-6s4.5 6 8 6" stroke="#E1F58C" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="17.5" r="1.6" fill="#E1F58C"/></svg>
+    </span>
+    <h1>Cashflow · New direction</h1>
+    <span class="cuenote">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.1"/></svg>
+      Example data
+    </span>
+  </div>
+
+  <div class="tools" role="tablist" aria-label="Preview screens">
+    <button class="toolico" role="tab" id="t-home" aria-selected="true" aria-controls="s-home" aria-label="Preview Home" title="Home" onclick="show('home')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 9.5V20h5v-5h4v5h5V9.5"/></svg>
+    </button>
+    <button class="toolico" role="tab" id="t-review" aria-selected="false" aria-controls="s-review" aria-label="Preview Review" title="Review" onclick="show('review')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18v6a6 6 0 01-6 6H9a6 6 0 01-6-6z"/><path d="M7 12h2M13 12h2"/></svg>
+    </button>
+    <button class="toolico" role="tab" id="t-add" aria-selected="false" aria-controls="s-add" aria-label="Preview Add" title="Add" onclick="show('add')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+    <span class="toolspacer"></span>
+    <button class="toolico rmon" id="rmBtn" aria-pressed="false" aria-label="Reduced motion" title="Toggle reduced motion">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v.1M12 11.5v4.5"/></svg>
+    </button>
+    <button class="toolico" id="resetAll" aria-label="Reset examples" title="Restores sandbox examples and clears every draft, filter and review change">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10a8 8 0 0113.7-5.7L20 6.5"/><path d="M20 3v3.5h-3.5M20 14a8 8 0 01-13.7 5.7L4 17.5"/><path d="M4 21v-3.5h3.5"/></svg>
+    </button>
+  </div>
+
+  <!-- ——————— PHONE ——————— -->
+  <div class="phone" id="phone">
+    <div class="ph-status"><span class="mono">9:41</span><span class="ex">Example data · sandbox — nothing leaves this page</span></div>
+
+    <div class="ph-body">
+      <!-- HOME -->
+      <div class="screen on" id="s-home" role="tabpanel" aria-label="Home">
+        <div class="ph-head">
+          <span class="appmono" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 14c3.5 0 3.5-6 8-6s4.5 6 8 6" stroke="#E1F58C" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="17.5" r="1.6" fill="#E1F58C"/></svg></span>
+          <span class="spacer"></span>
+          <select class="minisel" id="viewCurSel" aria-label="View currency" onchange="setViewCur(this.value)"></select>
+          <select class="minisel" id="periodSel" aria-label="Period" onchange="setPeriod(this.value)">
+            <option value="all">All</option><option value="7">7d</option><option value="30">30d</option>
+          </select>
+          <button class="ictl" id="filterBtn" aria-expanded="false" aria-label="Filters" title="Filters" onclick="toggleFilters()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16l-6.5 8v5L10 21v-8z"/></svg>
+          </button>
+          <button class="ictl" id="searchBtn" aria-expanded="false" aria-label="Search" title="Search" onclick="toggleSearch()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          </button>
+        </div>
+
+        <div class="iopair">
+          <div class="io in">
+            <span class="iotop">
+              <span class="glyph" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6M6.5 11.5L12 6l5.5 5.5"/></svg></span>
+              <span class="iocode" id="inCur"></span>
+            </span>
+            <span class="val" id="inAmt" aria-label="Money in"></span>
+          </div>
+          <div class="io out">
+            <span class="iotop">
+              <span class="glyph" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6.5 12.5L12 18l5.5-5.5"/></svg></span>
+              <span class="iocode" id="outCur"></span>
+            </span>
+            <span class="val" id="outAmt" aria-label="Money out"></span>
+          </div>
+        </div>
+        <div class="iotrail">
+          <span class="net">Recorded net</span>
+          <span class="netv" id="netAmt" aria-live="polite"></span>
+        </div>
+
+        <div class="revealfld" id="searchwrap">
+          <div class="srch">
+            <input id="q" oninput="setQ(this.value)" placeholder="Search" aria-label="Search activity">
+          </div>
+        </div>
+        <div class="fwrap" id="fwrap" role="group" aria-label="Filters"></div>
+
+        <div id="rows"></div>
+        <div class="emptyone" id="homeEmpty" hidden><b>Nothing here yet</b>Try fewer words, or clear the filters.</div>
+      </div>
+
+      <!-- REVIEW · one item at a time -->
+      <div class="screen" id="s-review" role="tabpanel" aria-label="Review">
+        <div id="rvFlow"></div>
+      </div>
+
+      <!-- ADD · fullscreen calculator -->
+      <div class="screen" id="s-add" role="tabpanel" aria-label="Add record">
+        <div class="addhead">
+          <span class="ent" id="addTitle">Add record</span>
+          <button class="ictl" id="addCancel" aria-label="Cancel" title="Cancel" onclick="backFromAdd()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </button>
+        </div>
+        <div class="amtstage">
+          <div class="amt-big" id="amtBig" aria-live="polite"><span class="dim">0</span></div>
+        </div>
+        <div class="moneyrow">
+          <div class="seg" role="group" aria-label="Direction">
+            <button id="dir-in" aria-label="Money in" title="Money in" onclick="setDir('IN')">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6M6.5 11.5L12 6l5.5 5.5"/></svg>
+            </button>
+            <button id="dir-out" aria-pressed="true" aria-label="Money out" title="Money out" onclick="setDir('OUT')">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6.5 12.5L12 18l5.5-5.5"/></svg>
+            </button>
+          </div>
+          <select class="minisel" id="addCurSel" aria-label="Entry currency" onchange="setAddCur(this.value)"></select>
+          <button class="ictl" id="moreBtn" aria-expanded="false" aria-label="More details: kind, status, who, account, note, date" title="More details" onclick="toggleMore()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg>
+          </button>
+        </div>
+        <div class="fieldlines" id="moreFields">
+          <div>
+            <div class="infield"><label class="fld" for="kindSel">Kind</label>
+              <select class="minisel" id="kindSel" style="width:100%;margin-top:4px;" aria-label="Kind" onchange="setKind(this.value)"></select>
+            </div>
+          </div>
+          <div>
+            <div class="infield"><label class="fld" for="statSel">Status</label>
+              <select class="minisel" id="statSel" style="width:100%;margin-top:4px;" aria-label="Status" onchange="setStat(this.value)"></select>
+            </div>
+          </div>
+          <div class="infield"><label for="fWho">Who (optional)</label><input id="fWho" placeholder="e.g. Chidi"></div>
+          <div class="infield"><label for="fAcc">Account (optional)</label><input id="fAcc" placeholder="Unassigned"></div>
+          <div class="infield"><label for="fNote">Note (optional)</label><input id="fNote" placeholder="Add a note"></div>
+          <div class="infield"><label for="fDate">Date</label><input id="fDate" type="date" value="2026-10-26"></div>
+        </div>
+        <div class="keypad" id="kpad"></div>
+        <div class="err" id="saveErr" hidden></div>
+        <div class="saveline">
+          <button class="btn citron block" id="saveBtn" onclick="saveDemo()" aria-label="Save transaction">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.5l5 5L19.5 7"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- icon-only floating dock -->
+    <div class="dock">
+      <div class="dockinner" role="navigation" aria-label="Main">
+        <button id="n-home" aria-label="Home" title="Home" onclick="show('home')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 9.5V20h5v-5h4v5h5V9.5"/></svg>
+        </button>
+        <button id="n-review" aria-label="Review" title="Review" onclick="show('review')" style="position:relative;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18v6a6 6 0 01-6 6H9a6 6 0 01-6-6z"/><path d="M7 12h2M13 12h2"/></svg>
+          <span class="badge" id="navBadge">2</span>
+        </button>
+        <button id="n-add" class="add" aria-label="Add record" title="Add record" onclick="openAdd()">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+        <button id="n-settings" aria-label="Settings" title="Settings" onclick="settingsNote()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 00-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 00-2-1.2L14 3h-4l-.5 2.6a7 7 0 00-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 005 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1c.6.5 1.3.9 2 1.2L10 21h4l.5-2.6c.7-.3 1.4-.7 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="scrim" id="scrim" onclick="closeSheet()"></div>
+    <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Detail"></div>
+    <div class="toast" id="toast" role="status"></div>
+  </div>
+
+  <!-- quiet reference — collapsed, after the phone -->
+  <details class="board"><summary>What changed vs Fresh current — before → after</summary>
+    <div class="inner"><div class="mapscroll" role="region" aria-label="Before and after table" tabindex="0">
+    <table class="map">
+      <tr><th>Group</th><th>Fresh current (white / mint)</th><th>Night current (charcoal / citron)</th></tr>
+      <tr><td><b>Overall</b></td><td>Warm white app, mint accent, labeled full-width bottom bar with big Add orb, visible text everywhere.</td><td>Matte charcoal dark-native app, single citron accent, icon-only floating dock — visible words reserved for content, not chrome.</td></tr>
+      <tr><td><b>Home</b></td><td>Giant isolated net hero with stacked utility labels; currency/period selects always visible; always-on search field and filter chips row.</td><td>Compact contextual header; horizontal In/Out magnitude pair with arrow icons; understated Recorded net; search and filter are icon buttons revealing controls on demand; the date-grouped edge-to-edge feed is the centerpiece.</td></tr>
+      <tr><td><b>Rows</b></td><td>Bordered list rows inside implied cards, text arrows and "In/Out" words beside amounts.</td><td>Edge-to-edge hairline rows, beautiful initial/geometric avatars with citron in-dot, arrows-only direction cue, name/full-amount hierarchy; exceptional statuses only (Unclassified quiet, Pending lavender, Failed red).</td></tr>
+      <tr><td><b>Review</b></td><td>List of problem cards, each with "Needs a direction" pill plus reason text and multiple buttons.</td><td>ONE focused question at a time with "1 / 2" progress; full amount or genuine "Amount missing"; In/Out as arrow buttons with accessible labels; Record is a single explicit check-button only when valid; Ignore is a distinct icon; original alert opens from a receipt icon. No big warning cards.</td></tr>
+      <tr><td><b>Add</b></td><td>Amount under tabs, text Cancel, labeled keypad, chips for kind/status, bottom nav visible until Cancel.</td><td>Full-screen calculator: huge tabular amount, arrow-only direction segment, currency mini-select, 56px keypad with X cancel icon, citron check Save; dots icon reveals real optional fields (kind/status selects, who/account/note/date); dock hides during entry.</td></tr>
+      <tr><td><b>Detail</b></td><td>Text buttons Edit/Delete/Close under key–value pile inside white sheet.</td><td>Coherent dark receipt-sheet with a real kind/account/status/evidence reading, meaningful Edit/Trash/Close icons, delete proposes a red confirmation before the ledger clears.</td></tr>
+      <tr><td><b>Outer chrome</b></td><td>H1 + lede paragraph + visible tab pills before the phone; explainer cards below.</td><td>One quiet line "Cashflow · New direction" + Example-data cue; icon controls for preview views, motion and reset; reference table collapsed after the phone.</td></tr>
+    </table>
+    </div></div>
+  </details>
+
+  <details class="board"><summary>Concept notes — sandbox rules, API, native mapping (collapsible)</summary>
+    <div class="inner">
+      <p class="boardnote">Interactive concept on example data only — sandbox memory, nothing syncs or leaves this page. <b>Reset examples</b> (circular-arrow icon) restores the ledger, review, drafts and filters. Currencies never mix in totals; own transfers, pending/failed and unreviewed items are excluded from sums; recording only happens when required facts are valid. Editing keeps the same record ID. Reduced motion honours the system preference and the leaf toggle.</p>
+      <p class="boardnote">Sandbox logic is adapted from the proven <a href="fresh-current-comparison.html">fresh-current-comparison.html</a> script; all seed data, totals invariants and the public API contract (<code>seed, renderAll, entries, review, editingId, totalsFor, toMinor, openAdd, saveDemo, editRow, openDetail, openReviewEdit, resolveReview, show, resetAll, toastSay</code>) are preserved. Native app files (<code>ui/CashflowApp.kt</code>, <code>ui/FlowScreens.kt</code>, <code>ui/theme/CashflowTheme.kt</code>, <code>ui/components/LedgerRow.kt</code>) were not touched. Spec: <a href="night-current-design.md">night-current-design.md</a>.</p>
+    </div>
+  </details>
+
+</div>
+
+<script>
+'use strict';
+/* ————————————————— sandbox state (example only) ————————————————— */
+const CURRENCIES = ['NGN','USD','GBP','EUR','KES','GHS'];
+const ANCHOR = '2026-10-26';
+let entries = [], review = [], editingId = null, dirty=false, rIdx=0, rvEdit=false;
+let filt = {period:'all', q:'', dir:null, src:null};
+let viewCur = 'NGN';
+
+/* money: integer minor units, strict 2-decimal input — unchanged from proven sandbox */
+const dp = /^\d+(\.\d{1,2})?$/;
+function toMinor(str){
+  const s = String(str).trim();
+  if(!dp.test(s)) return null;
+  const i = s.indexOf('.'), w = i<0 ? s : s.slice(0,i), f = i<0 ? '0' : s.slice(i+1);
+  const minor = parseInt(w,10)*100 + parseInt((f+'0').slice(0,2),10);
+  return Number.isSafeInteger(minor) && minor >= 0 ? minor : null;
+}
+function fmt(minor, cur){
+  const whole = Math.floor(minor/100), part = String(minor%100).padStart(2,'0');
+  return cur + ' ' + whole.toLocaleString('en-NG') + '.' + part;
+}
+function dayOffset(dateStr){
+  const a = new Date(ANCHOR+'T12:00:00'), d = new Date(dateStr+'T12:00:00');
+  return Math.round((a-d)/86400000);
+}
+function dayLabel(off){
+  if(off===0) return 'Today';
+  if(off===1) return 'Yesterday';
+  const d = new Date(ANCHOR+'T12:00:00'); d.setDate(d.getDate()-off);
+  return d.getDate()+' '+d.toLocaleString('en',{month:'short'});
+}
+/* money helpers: minus sign for negatives; signed lead used only for the logged net */
+const MINOR_ABS = m=>Math.abs(m);
+const MINUS = '\u2212';
+
+function seed(){
+  entries = [
+    {id:'c', who:'Lunch',      kind:'Expense',      dir:'OUT', cur:'NGN', amtMinor:125050, off:0,  date:'2026-10-26', origin:'Manual',   status:'Completed', note:'Example', account:'Unassigned'},
+    {id:'b', who:'Ada',        kind:'Unclassified', dir:'OUT', cur:'NGN', amtMinor:850000, off:1,  date:'2026-10-25', origin:'Capture',  status:'Completed', note:'Example', account:'Unassigned'},
+    {id:'a', who:'Bob',        kind:'Unclassified', dir:'IN',  cur:'NGN', amtMinor:100000, off:24, date:'2026-10-02', origin:'Capture',  status:'Completed', note:'Example', account:'Unassigned'},
+  ];
+  review = [
+    {id:'r1', src:'Payment alert', amount:'50.00', cur:'USD', dir:'UNSET', reason:'The amount is readable, the direction is not.', grabbed:'Debit/credit alert, 20:41 — "You sent or received USD 50.00."'},
+    {id:'r2', src:'Payment alert', amount:null,    cur:'NGN', dir:'UNSET', reason:'The amount is not readable in the text of the alert.', grabbed:'…debited your account for "home delivery" on 24 Oct.'},
+  ];
+  editingId = null; dirty=false; rIdx=0; rvEdit=false;
+  filt = {period:'all', q:'', dir:null, src:null}; viewCur='NGN';
+  resetAddDraft();
+}
+
+function totalsFor(cur, dirOnly){
+  return entries.filter(e=>e.cur===cur && e.status==='Completed' && e.kind!=='Transfer' && e.dir===dirOnly)
+                .reduce((s,e)=>s+e.amtMinor,0);
+}
+
+/*————————————— shared bits —————————————*/
+function el(tag, cls, text){ const n=document.createElement(tag); if(cls)n.className=cls; if(text!=null)n.textContent=text; return n; }
+function icoBtn(cls, aria, title, svg, onclk){
+  const b=el('button',cls); b.setAttribute('aria-label',aria); b.title=title; b.innerHTML=svg;
+  b.onclick=onclk; return b;
+}
+const SVG = {
+  up:'<svg width="__S__" height="__S__" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6M6.5 11.5L12 6l5.5 5.5"/></svg>',
+  down:'<svg width="__S__" height="__S__" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6.5 12.5L12 18l5.5-5.5"/></svg>',
+  trash:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V5h6v2M6.5 7l1 13h9l1-13"/><path d="M10 11v6M14 11v6"/></svg>',
+  pencil:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L20 8l-4-4L4 16z"/></svg>',
+  check:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l5 5L19.5 7"/></svg>',
+  x:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  minus:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg>',
+  receipt:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-2.5-1.5L13 21l-2.5-1.5L8 21l-2-1.5z"/><path d="M9.5 8h5M9.5 12h5"/></svg>',
+  geopattern:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 14c3.5 0 3.5-6 8-6s4.5 6 8 6"/><circle cx="12" cy="17.5" r="1.5" fill="currentColor" stroke="none"/></svg>'
+};
+function dirIco(d){ return '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">'+(d==='IN'?'<path d="M12 19V6M6.5 11.5L12 6l5.5 5.5"/>':'<path d="M12 5v13M6.5 12.5L12 18l5.5-5.5"/>')+'</svg>'; }
+function avatarFor(t){
+  const s = (t||'').trim();
+  if(!s || /^(Alert|Manual|Example)/i.test(s)) return null;
+  const w = s.split(/\s+/).filter(Boolean);
+  return (w.length>1 ? w[0][0]+w[w.length-1][0] : w[0][0]).toUpperCase();
+}
+const PERIOD_DAYS = {'all':Infinity,'7':7,'30':30};
+function setPeriod(p){ filt.period=p; renderHome(); }
+function setQ(v){ filt.q=v; renderHome(); }
+function setViewCur(c){ viewCur=c; renderHome(); }
+function toggleFilters(){
+  const w=document.getElementById('fwrap'); const on=w.classList.toggle('on');
+  const b=document.getElementById('filterBtn'); b.setAttribute('aria-expanded',on); b.classList.toggle('on',on);
+}
+function toggleSearch(){
+  const w=document.getElementById('searchwrap'); const on=w.classList.toggle('on');
+  const b=document.getElementById('searchBtn'); b.setAttribute('aria-expanded',on); b.classList.toggle('on',on);
+  if(on){ const i=document.getElementById('q'); if(i) i.focus({preventScroll:true}); }
+}
+
+function homePool(){
+  let pool = entries.filter(e=>e.cur===viewCur && e.off < PERIOD_DAYS[filt.period]);
+  if(filt.dir) pool = pool.filter(e=>e.dir===filt.dir);
+  if(filt.src) pool = pool.filter(e=>e.origin===filt.src);
+  const q = filt.q.trim().toLowerCase();
+  if(q) pool = pool.filter(e=>(e.who+' '+e.note+' '+e.account).toLowerCase().includes(q));
+  return pool;
+}
+
+/*————————————— HOME —————————————*/
+function renderHome(){
+  const pool = homePool();
+  const in_  = pool.filter(e=>e.dir==='IN'  && e.kind!=='Transfer' && e.status==='Completed').reduce((s,e)=>s+e.amtMinor,0);
+  const out_ = pool.filter(e=>e.dir==='OUT' && e.kind!=='Transfer' && e.status==='Completed').reduce((s,e)=>s+e.amtMinor,0);
+  const net = in_ - out_;
+  const amtOnly = m => { const whole = Math.floor(m/100), part = String(m%100).padStart(2,'0'); return whole.toLocaleString('en-NG')+'.'+part; };
+  const inAmtEl = document.getElementById('inAmt'), outAmtEl = document.getElementById('outAmt');
+  inAmtEl.textContent  = amtOnly(in_);
+  outAmtEl.textContent = amtOnly(out_);
+  document.getElementById('inCur').textContent = viewCur;
+  document.getElementById('outCur').textContent = viewCur;
+  // long amounts shrink instead of clipping — never truncate money
+  [inAmtEl,outAmtEl].forEach(e2=>e2.classList.toggle('long', e2.textContent.length>8));
+  const nv = document.getElementById('netAmt');
+  const netAbs = Math.abs(net); // sign carried separately — fmt assumes nonnegative
+  nv.textContent = (net<0?MINUS+' ':'')+fmt(netAbs, viewCur);
+  nv.classList.toggle('pos', net>=0);
+
+  const selCur = document.getElementById('viewCurSel');
+  if(!selCur.options.length) CURRENCIES.forEach(c=>selCur.appendChild(new Option(c, c)));
+  selCur.value = viewCur;
+  document.getElementById('periodSel').value = filt.period;
+
+  // filter chips only inside the reveal
+  const fc = document.getElementById('fwrap'); fc.textContent='';
+  [['in','Money in','IN'],['out','Money out','OUT'],['cap','Captured',null],['man','Manual',null]].forEach(([key,label,val])=>{
+    const b = el('button','fchip'+((val?filt.dir===val:filt.src===label)?' sel':''), label);
+    b.setAttribute('aria-pressed', String(!!(val?filt.dir===val:filt.src===label)));
+    b.onclick=()=>{
+      if(val){ filt.dir = (filt.dir===val)?null:val; filt.src=null; }
+      else { filt.src = (filt.src===label)?null:label; filt.dir=null; }
+      renderHome();
+    };
+    fc.appendChild(b);
+  });
+
+  // rows: date-grouped edge-to-edge
+  const rowsEl = document.getElementById('rows'); rowsEl.textContent='';
+  const sorted = pool.slice().sort((a,b)=>a.off-b.off || a.who.localeCompare(b.who));
+  let lastDay=null;
+  sorted.forEach(e=>{
+    if(e.off!==lastDay){ lastDay=e.off; rowsEl.appendChild(el('div','dh',dayLabel(e.off))); }
+    const row = el('button','trow'+(e.dir==='IN'?' is-in':''));
+    const dg = el('span','av', null);
+    const ini = avatarFor(e.who);
+    dg.innerHTML = ini ? ini : SVG.geopattern.replace('<svg xmlns="http://www.w3.org/2000/svg"','<svg width="17" height="17"');
+    dg.insertAdjacentHTML('beforeend','<span class="dot"></span>');
+    const lw = el('span','leadwrap');
+    lw.appendChild(el('span','lead',e.who||'Example entry'));
+    const subParts = [];
+    if(e.account && !/^unassigned$/i.test(e.account)) subParts.push(e.account);
+    if(e.note && !/^Example/.test(e.note) && !/^Recorded from Review/.test(e.note)) subParts.push(e.note);
+    // exception-status only: unclassified quiet, pending lavender, failed red
+    if(e.status==='Pending') subParts.push('Pending');
+    if(e.status==='Failed') subParts.push('Failed');
+    if(e.kind==='Unclassified' && e.status==='Completed') subParts.push('Unclassified');
+    lw.appendChild(el('span','sub', subParts.join(' · ')));
+    const amtr = el('span','amtr');
+    amtr.appendChild(el('span','amt',(e.dir==='IN'?'':'')+fmt(e.amtMinor,e.cur)));
+    amtr.insertAdjacentHTML('beforeend','<span class="dirico" aria-hidden="true">'+dirIco(e.dir)+'</span>');
+    row.appendChild(dg); row.appendChild(lw); row.appendChild(amtr);
+    row.setAttribute('aria-label',(e.who||'Entry')+', '+fmt(e.amtMinor,e.cur)+', money '+(e.dir==='IN'?'in':'out')+(e.status!=='Completed'?', '+e.status.toLowerCase():''));
+    row.onclick=()=>openDetail(e.id);
+    rowsEl.appendChild(row);
+  });
+  document.getElementById('homeEmpty').hidden = pool.length>0;
+
+  const n = review.length;
+  const badge = document.getElementById('navBadge');
+  badge.textContent = n; badge.style.display = n ? '' : 'none';
+  document.getElementById('searchBtn').classList.toggle('dirty', !!filt.q.trim());
+  document.getElementById('filterBtn').classList.toggle('dirty', !!(filt.dir||filt.src));
+}
+
+/*————————————— REVIEW · one focused question —————————————*/
+function renderReview(){
+  const flow=document.getElementById('rvFlow'); flow.textContent='';
+  const n=review.length;
+  if(rIdx>=n) rIdx=Math.max(0,n-1);
+  if(!n){
+    const d=el('div','rvdone');
+    d.innerHTML='<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l5 5L19.5 7"/></svg>The tray is clear. Alerts Cashflow can\u2019t read confidently wait here — clear ones record straight away.';
+    flow.appendChild(d); return;
+  }
+  const r=review[rIdx];
+  const needAmt = r.amount==null;
+  const needCur = !r.cur || r.cur==='?';
+  const needDir = r.dir==='UNSET';
+  const done = !needAmt && !needCur && !needDir;
+
+  const stage=el('div','rvstage');
+  // progress: 1 / 2
+  const bar=el('div','rvbar');
+  const prog=el('span','prog',(rIdx+1)+' / '+n);
+  prog.setAttribute('aria-label','Item '+(rIdx+1)+' of '+n);
+  bar.appendChild(prog);
+  bar.appendChild(icoBtn('ignico','Ignore this alert','Ignore',SVG.minus,()=>ignoreReview(r.id)));
+  stage.appendChild(bar);
+
+  const src=el('div','rvsrc'); src.innerHTML=SVG.receipt; src.appendChild(el('span',null,r.src));
+  stage.appendChild(src);
+
+  if(needAmt || rvEdit){
+    const a=el('div','rvamt miss', r.amount==null?'Amount missing':'Editing amount');
+    stage.appendChild(a);
+    const q=el('div','rvq','How much was it, and which way did it go?');
+    stage.appendChild(q);
+    // amount editor shown by default — the focused question must be answerable
+    const st=el('div','rvinline on');
+    const f=el('div','amtfield');
+    const lab=el('label',null,'Amount'); lab.htmlFor='rvAmt';
+    const inp=document.createElement('input'); inp.id='rvAmt'; inp.type='text'; inp.inputMode='decimal'; inp.placeholder='e.g. 25.00';
+    if(r.draftAmt) inp.value=r.draftAmt; else if(r.amount!=null) inp.value=r.amount;
+    inp.oninput=()=>{ r.draftAmt=inp.value; };
+    f.appendChild(lab); f.appendChild(inp); st.appendChild(f);
+    // currency row — explicit Unknown, stays unknown until the user picks
+    const curSel=document.createElement('select'); curSel.className='minisel'; curSel.style.width='100%';
+    curSel.setAttribute('aria-label','Currency');
+    const uk=new Option('Unknown','?'); uk.disabled=false; curSel.appendChild(uk);
+    CURRENCIES.forEach(c=>curSel.appendChild(new Option(c,c)));
+    curSel.value = r.cur && CURRENCIES.includes(r.cur) ? r.cur : '?';
+    curSel.onchange=()=>{ r.cur=curSel.value==='?' ? '?' : curSel.value; r.draftCur=curSel.value; };
+    const cd=el('div',null); cd.style.display='flex'; cd.style.gap='8px';
+    const dirSeg=el('div','seg'); dirSeg.style.flex='1';
+    [['IN'],['OUT']].forEach(([d])=>{
+      const b=el('button',null); b.style.display='grid'; b.style.placeItems='center';
+      b.setAttribute('aria-label','Money '+(d==='IN'?'in':'out'));
+      b.title='Money '+(d==='IN'?'in':'out');
+      b.setAttribute('aria-pressed', String(r.dir===d));
+      b.innerHTML=dirIco(d)+'<span class="tinylab">'+(d==='IN'?'In':'Out')+'</span>';
+      b.onclick=()=>{ r.dir=d; r.draftDir=d; renderReview(); };
+      dirSeg.appendChild(b);
+    });
+    cd.appendChild(dirSeg); cd.appendChild(curSel);
+    st.appendChild(cd);
+    const rb=el('button','btn citron',null);
+    rb.setAttribute('aria-label','Record this entry'); rb.title='Record';
+    rb.innerHTML=SVG.check;
+    rb.onclick=()=>saveReviewAmount(r);
+    st.appendChild(rb);
+    stage.appendChild(st);
+  } else {
+    stage.appendChild(el('div','rvamt',fmt(toMinor(String(r.amount)) ?? 0, r.cur)+(needCur?' ?':'')));
+    if(needCur){
+      // amount is known but currency was never read — real chooser, Unknown until picked
+      const curSel=document.createElement('select'); curSel.className='minisel';
+      curSel.setAttribute('aria-label','Currency');
+      curSel.appendChild(new Option('Unknown','?'));
+      CURRENCIES.forEach(c=>curSel.appendChild(new Option(c,c)));
+      curSel.value='?';
+      curSel.onchange=()=>{ r.cur=curSel.value==='?' ? '?' : curSel.value; r.draftCur=curSel.value; renderReview(); };
+      const cd2=el('div',null); cd2.style.marginTop='8px'; cd2.appendChild(curSel);
+      stage.appendChild(cd2);
+    }
+    if(needDir){
+      stage.appendChild(el('div','rvq','Did this come in or go out?'));
+    }
+    const ioq=el('div','ioq');
+    ['IN','OUT'].forEach(d=>{
+      const b=el('button',null);
+      b.setAttribute('aria-label','Money '+(d==='IN'?'in':'out'));
+      b.title='Money '+(d==='IN'?'in':'out');
+      b.setAttribute('aria-pressed', String(r.dir===d));
+      b.innerHTML='<span style="display:grid;place-items:center">'+(d==='IN'?SVG.up.replace(/__S__/g,'20'):SVG.down.replace(/__S__/g,'20'))+'</span><span class="tinylab">'+(d==='IN'?'In':'Out')+'</span>';
+      b.onclick=()=>{ r.dir=d; renderReview(); };
+      ioq.appendChild(b);
+    });
+    stage.appendChild(ioq);
+  }
+  if(!(needAmt || rvEdit)) {
+    if(done){ stage.appendChild(el('div','rvq','Ready to record.')); }
+  }
+  // original alert via receipt icon
+  const ad=el('details','alertdet');
+  ad.style.marginTop='6px';
+  const s2=el('summary'); s2.setAttribute('aria-label','Show the original alert');
+  s2.title='Show the original alert';
+  s2.innerHTML=SVG.receipt;
+  ad.appendChild(s2);
+  ad.appendChild(el('div','rvquote',r.grabbed));
+  stage.appendChild(ad);
+  if(done && !needAmt && !rvEdit){
+    const act=el('div','rvact');
+    const bRec=el('button','btn citron');
+    bRec.setAttribute('aria-label','Record this entry'); bRec.title='Record';
+    bRec.innerHTML=SVG.check;
+    bRec.onclick=()=>{ if(resolveReview(r.id)){ rIdx=Math.max(0,rIdx-1); renderAll(); } };
+    act.appendChild(bRec);
+    act.appendChild(icoBtn('ignico','Edit before recording','Edit',SVG.pencil,()=>{ rvEdit=true; renderReview(); }));
+    stage.appendChild(act);
+  }
+  flow.appendChild(stage);
+  // honest nav cue between items
+  const nav=el('div','rvact'); nav.style.margin='10px 18px 0'; nav.style.justifyContent='center';
+  if(rIdx>0){ nav.appendChild(icoBtn('ignico','Previous item','Previous',SVG.up.replace(/__S__/g,'19'),()=>{rIdx--;rvEdit=false;renderReview();})); }
+  if(rIdx<n-1){ nav.appendChild(icoBtn('ignico','Next item','Next',SVG.down.replace(/__S__/g,'19'),()=>{rIdx++;rvEdit=false;renderReview();})); }
+  if(nav.children.length) flow.appendChild(nav);
+}
+function saveReviewAmount(r){
+  const raw=(document.getElementById('rvAmt')||{}).value||r.draftAmt||'';
+  const minor=toMinor(String(raw).replace(/,/g,'').replace(',', '.'));
+  if(minor===null||minor<=0){ toastSay('That amount isn\u2019t valid — digits only, up to 2 decimals.'); return; }
+  r.amount=raw.trim(); r.cur=r.draftCur||r.cur||'?'; // never silently default the currency
+  if(r.dir==='UNSET'){ r.dir=r.draftDir||'UNSET'; }
+  rvEdit=false;
+  if(resolveReview(r.id)){ rIdx=Math.max(0,rIdx-1); renderAll(); }
+}
+function ignoreReview(id){
+  review=review.filter(r=>r.id!==id); dirty=true;
+  rvEdit=false; rIdx=Math.max(0,Math.min(rIdx,review.length-1));
+  renderAll();
+  toastSay('Ignored (sandbox). Nothing was counted; nothing was deleted.');
+}
+/* Record = accepted sample entry in the chosen currency */
+function resolveReview(id){
+  const r=review.find(x=>x.id===id); if(!r) return false;
+  if(r.amount==null){ toastSay('Enter the amount first — you never record a missing fact silently.'); rvEdit=true; renderReview(); return false; }
+  const minor=toMinor(String(r.amount).replace(',','.'));
+  if(minor===null||minor<=0){ toastSay('That amount is not valid (needs \u22642 decimals).'); return false; }
+  if(r.dir==='UNSET'){ toastSay('Pick a direction with the arrows before recording.'); return false; }
+  if(!r.cur||r.cur==='?'||!CURRENCIES.includes(r.cur)){ toastSay('Pick a currency before recording.'); return false; }
+  entries.unshift({id:'r'+id, who:'Alert \u00b7 '+(r.src.replace(' \u00b7 Example','')), kind:'Unclassified', dir:r.dir, cur:r.cur, amtMinor:minor, off:0, date:ANCHOR, origin:'Capture', status:'Completed', note:'Recorded from Review (example)', account:'Unassigned'});
+  review=review.filter(x=>x.id!==id); dirty=true;
+  renderAll();
+  toastSay(r.cur!=='NGN' ? 'Recorded under '+r.cur+'. NGN totals untouched.' : 'Recorded (example).');
+  return true;
+}
+/* openReviewEdit keeps the contract: focus the review editor for a given id */
+function openReviewEdit(id){
+  const i=review.findIndex(x=>x.id===id); if(i<0) return;
+  rIdx=i; rvEdit=true; show('review'); renderReview();
+}
+
+/*————————————— ADD · fullscreen calculator —————————————*/
+let addAmt='', addCur='NGN', addDir='OUT', kind='Unclassified', stat='Completed';
+const KINDS=['Expense','Income','Transfer','Refund','Fee','Unclassified'];
+const STATUSES=['Completed','Pending','Failed'];
+const KIND_DIR = {Expense:'OUT', Income:'IN', Fee:'OUT'};
+const KIND_LABEL = {Transfer:'Own transfer'};
+const KIND_H = {Expense:'Expense must be money OUT', Income:'Income must be money IN', Fee:'A fee goes OUT'};
+
+function resetAddDraft(){
+  addAmt=''; addCur='NGN'; addDir='OUT'; kind='Unclassified'; stat='Completed';
+  const who=document.getElementById('fWho');
+  if(who){ who.value=''; document.getElementById('fAcc').value=''; document.getElementById('fNote').value=''; document.getElementById('fDate').value=ANCHOR; }
+  document.getElementById('saveBtn').setAttribute('aria-label','Save transaction');
+  document.getElementById('saveErr').hidden=true;
+  document.getElementById('moreFields').classList.remove('on');
+  const mb=document.getElementById('moreBtn'); mb.setAttribute('aria-expanded','false'); mb.classList.remove('on');
+  renderAdd();
+}
+function openAdd(){ resetAddDraft(); show('add'); }
+function backFromAdd(){ resetAddDraft(); show('home'); }
+function renderAdd(){
+  const big=document.getElementById('amtBig');
+  big.textContent=''; const live=el('span',addAmt?'':'dim',addAmt||'0');
+  big.appendChild(live);
+  const selC=document.getElementById('addCurSel');
+  if(!selC.options.length) CURRENCIES.forEach(c=>selC.appendChild(new Option(c, c)));
+  selC.value=addCur;
+  const di=document.getElementById('dir-in'), doo=document.getElementById('dir-out');
+  di.classList.toggle('sel',addDir==='IN'); doo.classList.toggle('sel',addDir==='OUT');
+  di.setAttribute('aria-pressed',addDir==='IN'); doo.setAttribute('aria-pressed',addDir==='OUT');
+  const ks=document.getElementById('kindSel');
+  if(ks && !ks.options.length){ KINDS.forEach(k=>ks.appendChild(new Option(KIND_LABEL[k]||k,k))); STATUSES.forEach(s=>document.getElementById('statSel').appendChild(new Option(s,s))); }
+  if(ks){ ks.value=kind; document.getElementById('statSel').value=stat; }
+}
+function setKind(k){
+  kind=k;
+  if(KIND_DIR[k] && addDir!==KIND_DIR[k]){ addDir=KIND_DIR[k]; } // snap direction with the kind
+  renderAdd();
+}
+function setStat(s){ stat=s; renderAdd(); }
+function setAddCur(c){ addCur = CURRENCIES.includes(c) ? c : addCur; renderAdd(); }
+function setDir(d){
+  if(KIND_DIR[kind] && d!==KIND_DIR[kind]){
+    const e=document.getElementById('saveErr'); e.hidden=false;
+    e.textContent=KIND_H[kind]+' — keep the arrow or switch the kind.';
+    return;
+  }
+  addDir=d; document.getElementById('saveErr').hidden=true; renderAdd();
+}
+function buildKeypad(){
+  const kp=document.getElementById('kpad');
+  ['1','2','3','4','5','6','7','8','9','.','0','bs'].forEach(k=>{
+    const b=document.createElement('button');
+    if(k==='bs'){
+      b.classList.add('kbx');
+      b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5.5h10A1.5 1.5 0 0 1 20.5 7v10a1.5 1.5 0 0 1-1.5 1.5H9L3.5 12z"/><path d="M11.5 9.5l4.5 4.5M16 9.5L11.5 14"/></svg>';
+      b.setAttribute('aria-label','Clear last digit'); b.title='Clear last digit';
+    } else {
+      b.textContent=k;
+      b.setAttribute('aria-label',k==='.'?'Decimal point':'Digit '+k);
+    }
+    b.onclick=()=>{
+      if(k==='bs'){ addAmt=addAmt.slice(0,-1).replace(/\.$/,''); }
+      else if(k==='.'){ if(!addAmt.includes('.')) addAmt=(addAmt||'0')+'.'; }
+      else { const f=addAmt.split('.')[1]; if(f===undefined) addAmt=(addAmt==='0'?k:addAmt+k); else if(f.length<2) addAmt+=k; }
+      document.getElementById('saveErr').hidden=true;
+      renderAdd();
+    };
+    kp.appendChild(b);
+  });
+}
+function toggleMore(){
+  const f=document.getElementById('moreFields'); const on=f.classList.toggle('on');
+  const mb=document.getElementById('moreBtn'); mb.setAttribute('aria-expanded',on); mb.classList.toggle('on',on);
+}
+function saveDemo(){
+  const err=document.getElementById('saveErr');
+  const showErr=m=>{ err.hidden=false; err.textContent=m; };
+  const minor=toMinor(addAmt);
+  if(minor===null){ showErr('Enter a valid amount — digits only, up to 2 decimals.'); return; }
+  if(minor<=0){ showErr('An amount above 0 is required to save.'); return; }
+  if(!CURRENCIES.includes(addCur)){ showErr('Pick a supported entry currency.'); return; }
+  if(KIND_DIR[kind] && addDir!==KIND_DIR[kind]){ showErr(KIND_H[kind]+' — direction and kind don\u2019t match.'); return; }
+  if(addDir!=='IN' && addDir!=='OUT'){ showErr('Pick a direction.'); return; }
+  const dateVal=document.getElementById('fDate').value||ANCHOR;
+  if(dayOffset(dateVal)<0){ /* sandbox clock warning kept quiet; date kept */ }
+  const who=document.getElementById('fWho').value.trim();
+  const acc=document.getElementById('fAcc').value.trim();
+  const note=document.getElementById('fNote').value.trim();
+  if(editingId){
+    const e=entries.find(x=>x.id===editingId);
+    if(e){ Object.assign(e,{who:who, dir:addDir, cur:addCur, kind, status:stat, amtMinor:minor, date:dateVal, off:dayOffset(dateVal), account:acc||'Unassigned', note:note}); }
+    editingId=null;
+    document.getElementById('saveBtn').setAttribute('aria-label','Save transaction');
+    toastSay('Updated (sandbox) — same record, not a duplicate.');
+  } else {
+    entries.unshift({id:'x'+Date.now(), who:who||'Manual entry', kind, dir:addDir, cur:addCur, amtMinor:minor, date:dateVal, off:dayOffset(dateVal), origin:'Manual', status:stat, note:note||'Example sandbox entry', account:acc||'Unassigned'});
+    toastSay('Example saved — sandbox only. Reset any time.');
+  }
+  document.getElementById('saveErr').hidden=true;
+  viewCur=addCur;
+  renderAll(); show('home'); resetAddDraft();
+}
+
+/*————————————— DETAIL receipt sheet —————————————*/
+function openDetail(id){
+  const e=entries.find(x=>x.id===id); if(!e) return;
+  const sheet=document.getElementById('sheet'); sheet.textContent='';
+  sheet.appendChild(el('div','grabber'));
+  const head=el('div',null); head.style.cssText='display:flex;align-items:flex-start;gap:10px;';
+  const amt=el('div','rvamt',fmt(e.amtMinor,e.cur)); amt.style.cssText='font-size:1.9rem;flex:1;';
+  head.appendChild(amt);
+  head.appendChild(icoBtn('ignico','Edit this record','Edit',SVG.pencil,()=>editRow(id)));
+  head.appendChild(icoBtn('ignico','Delete this record','Delete',SVG.trash,()=>confirmDelete(id)));
+  head.appendChild(icoBtn('ignico','Close','Close',SVG.x,()=>closeSheet()));
+  sheet.appendChild(head);
+  const sub=el('div','rvsrc', (e.dir==='IN'?'money in':'money out')+' \u00b7 '+fmt(e.amtMinor,e.cur)+' \u00b7 example');
+  sheet.appendChild(sub);
+  sheet.appendChild(el('p',null,(e.who||'Entry')+(e.kind==='Unclassified'?' \u2014 not classified yet.':' \u2014 '+e.kind.toLowerCase()+'.')))
+    .style.cssText='margin:.3rem 0 .6rem;color:#A0A7A6;font-size:.9rem;';
+  const kvRow=(k,v)=>{ const r=el('div','kv'); r.appendChild(el('span','k',k)); r.appendChild(el('span','v',v)); return r; };
+  sheet.appendChild(kvRow('Kind', KIND_LABEL[e.kind]||e.kind));
+  sheet.appendChild(kvRow('Status', e.status));
+  sheet.appendChild(kvRow('Account', e.account||'Unassigned'));
+  sheet.appendChild(kvRow('Came in as', e.origin));
+  sheet.appendChild(kvRow('Date', e.date));
+  if(e.kind==='Transfer') sheet.appendChild(el('p','setnote','Own transfer: excluded from the in / out magnitudes so legs never double count.'));
+  // delete confirmation lives here — proposed only
+  const confirmZone=el('div',null); confirmZone.id='delZone'; confirmZone.style.marginTop='12px'; confirmZone.hidden=true;
+  const confRow=el('div','rvact');
+  const bRed=el('button','btn red'); bRed.textContent='Delete from ledger'; bRed.setAttribute('aria-label','Delete this record permanently');
+  bRed.onclick=()=>deleteRow(id);
+  const bKeep=el('button','btn ghost'); bKeep.textContent='Keep';
+  confRow.appendChild(bRed); confRow.appendChild(bKeep);
+  confirmZone.appendChild(confRow);
+  sheet.appendChild(confirmZone);
+  openSheet();
+}
+function confirmDelete(id){
+  const z=document.getElementById('delZone'); if(!z) return;
+  z.hidden=false; const f=z.querySelector('button'); if(f) f.focus({preventScroll:true});
+}
+function editRow(id){
+  const e=entries.find(x=>x.id===id); if(!e) return;
+  closeSheet(); show('add'); resetAddDraft();
+  editingId=id;
+  document.getElementById('fWho').value=e.who;
+  document.getElementById('fAcc').value=e.account||'';
+  document.getElementById('fNote').value=e.note||'';
+  document.getElementById('fDate').value=e.date;
+  addCur=e.cur; addDir=e.dir; kind=e.kind; stat=e.status;
+  addAmt=(e.amtMinor/100).toFixed(2);
+  document.getElementById('saveBtn').setAttribute('aria-label','Save changes');
+  renderAdd();
+  toastSay('Editing this record — saving updates it in place.');
+}
+function deleteRow(id){
+  entries=entries.filter(x=>x.id!==id); dirty=true;
+  closeSheet(); renderAll();
+  toastSay('Deleted (sandbox). Reset restores the examples.');
+}
+
+/* ————— sheets, dock, toast, tabs ————— */
+let sheetPrevFocus=null;
+function phoneToTop(){ const p=document.getElementById('phone'); if(p) p.scrollTop=0; }
+function openSheet(){
+  const s=document.getElementById('sheet');
+  sheetPrevFocus=document.activeElement;
+  s.classList.add('on'); s.scrollTop=0;
+  document.getElementById('scrim').classList.add('on');
+  document.getElementById('phone').classList.add('sheetopen'); // dock hides behind a focused sheet
+  phoneToTop();
+  const f=s.querySelector('button,input'); if(f) f.focus({preventScroll:true});
+}
+function closeSheet(){
+  const s=document.getElementById('sheet'); s.classList.remove('on');
+  document.getElementById('scrim').classList.remove('on');
+  document.getElementById('phone').classList.remove('sheetopen');
+  phoneToTop();
+  if(sheetPrevFocus && sheetPrevFocus.focus) sheetPrevFocus.focus({preventScroll:true});
+  sheetPrevFocus=null;
+}
+document.addEventListener('keydown', ev=>{
+  if(ev.key==='Escape'){
+    const s=document.getElementById('sheet');
+    if(s.classList.contains('on')) closeSheet();
+  }
+});
+let tT;
+function toastSay(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('on');
+  clearTimeout(tT); tT=setTimeout(()=>t.classList.remove('on'), 2400);
+}
+function settingsNote(){
+  const sheet=document.getElementById('sheet'); sheet.textContent='';
+  sheet.appendChild(el('div','grabber'));
+  sheet.appendChild(el('h3',null,'Settings')).style.cssText='margin:.2rem 0 .3rem;';
+  sheet.appendChild(el('p','setnote','This concept covers Home, Review and Add. Settings keeps today\u2019s scope in the native app — currency picker, capture sources, permissions, export CSV and the setup guide — and keeps all of it; nothing here invents new capture toggles. Native files are untouched in this round.'));
+  const ok=el('button','btn citron block','Close'); ok.onclick=closeSheet;
+  sheet.appendChild(ok); openSheet();
+}
+function show(s){
+  ['home','review','add'].forEach(k=>{
+    const sc=document.getElementById('s-'+k); if(sc) sc.classList.toggle('on', k===s);
+    const tb=document.getElementById('t-'+k); if(tb) tb.setAttribute('aria-selected', String(k===s));
+    const nb=document.getElementById('n-'+k); if(nb){
+      nb.classList.toggle('on', k===s);
+      if(k===s) nb.setAttribute('aria-current','page'); else nb.removeAttribute('aria-current');
+    }
+  });
+  document.getElementById('addTitle').textContent = editingId ? 'Edit record' : 'Add record';
+  document.getElementById('phone').classList.toggle('addmode', s==='add'); // dock hides during focused entry
+  phoneToTop();
+  if(s==='home' && !document.documentElement.classList.contains('rm') && !window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+    const rows=document.querySelectorAll('#s-home .trow');
+    rows.forEach((r,i)=>{ if(i<5){ r.classList.remove('sw'); void r.offsetWidth; r.style.animationDelay=(i*30)+'ms'; r.classList.add('sw'); } });
+    setTimeout(()=>{ document.querySelectorAll('#s-home .trow').forEach(r=>{ r.classList.remove('sw'); r.style.animationDelay=''; }); }, 340);
+  }
+}
+const rmBtn=document.getElementById('rmBtn');
+rmBtn.onclick=()=>{
+  const on=document.documentElement.classList.toggle('rm');
+  rmBtn.setAttribute('aria-pressed', String(on));
+};
+function closeSheetQuietly(){ const s=document.getElementById('sheet'); if(s.classList.contains('on')) closeSheet(); sheetPrevFocus=null; phoneToTop(); }
+function resetAll(){
+  seed(); rvEdit=false; rIdx=0; closeSheetQuietly(); renderAll(); show('home');
+  toastSay('Examples restored — ledger, review, drafts and filters back to seed.');
+}
+document.getElementById('resetAll').onclick=resetAll;
+document.getElementById('t-review').addEventListener('click',()=>{ rvEdit=false; });
+
+function renderAll(){ renderHome(); renderReview(); renderAdd(); }
+seed(); buildKeypad(); renderAll();
+</script>
+</body>
+</html>

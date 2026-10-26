@@ -4,7 +4,9 @@ First draft, 2026-10-25. This folder is the current source of truth for what we 
 
 ## Current redesign
 
-The user selected **Fresh current** on 2026-10-26, replacing the original paper-ledger appearance. Read the [reference comparison](fresh-current-research.md), [screen and interaction specification](fresh-current-design.md), and [interactive screen comparison](fresh-current-comparison.html) before the next UI implementation pass. The HTML is an isolated example-data prototype, not the installed app. The former [UI design](ui-design.md) remains historical context; its palette and stamp-heavy presentation are superseded.
+The user requested a **completely new direction** and **icon-only bottom navigation**, replacing Fresh current. The current proposal is [Night current](night-current-design.md), with a [working concept](night-current-concept.html): charcoal surfaces, citron actions, activity-first Home, a floating icon dock, and focused Review. This palette and composition are proposed; the user confirmed the direction reset and reduced text. The HTML is an isolated example-data prototype, not the installed app.
+
+The [Fresh current comparison](fresh-current-comparison.html), [reference research](fresh-current-research.md), and original [UI design](ui-design.md) remain historical context. Their appearance and labeled-navigation rules are superseded by the new request.
 
 ## The app idea
 

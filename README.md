@@ -24,7 +24,7 @@ For a lower-memory Apple Silicon simulator build, use `scripts/build-ios-simulat
 
 ## Planning documents
 
-Start with the [first-draft overview](plans/README.md) and [Fresh current redesign](plans/fresh-current-design.md). Its [interactive comparison](plans/fresh-current-comparison.html) and [reference research](plans/fresh-current-research.md) precede native implementation. The `plans/` directory is the current source of truth; `docs/` contains redirects for earlier links.
+Start with the [first-draft overview](plans/README.md) and [Night current concept](plans/night-current-design.md). Its [interactive prototype](plans/night-current-concept.html) proposes the new icon-led direction before native implementation. Earlier [reference research](plans/fresh-current-research.md) remains available. The `plans/` directory is the current source of truth; `docs/` contains redirects for earlier links.
 
 - [Product plan](plans/product-plan.md): scope, screens, transaction behaviour, and release acceptance criteria.
 - [Onboarding and setup](plans/onboarding-and-setup.md): introduction, permissions, Android setup, guided iOS Shortcuts configuration, and recovery.
