@@ -1,9 +1,10 @@
 # Night current — Cashflow UI direction (concept spec, ≤100 lines)
 
-Status: user confirmed RESET of the Fresh-current direction + icon-only navigation, and confirmed the NEW
-day/night direction request. The dark charcoal/citron palette is **proposed, not user-signed-off** yet.
-This is a NEW composition, not a recolor. App name stays **Cashflow**. Old `fresh-current-*` files and
-all native source are untouched; this concept lives only in `night-current-concept.html` + this spec.
+Status: current design baseline. The user **likes the dark charcoal/citron direction** and the
+icon-only navigation, and has asked for **ongoing UX/visual polish** on this exact composition —
+hierarchy, clarity, ease of use. This is a living concept, not a gated proposal. App name stays
+**Cashflow**. Old `fresh-current-*` files and all native source are untouched; this concept lives
+only in `night-current-concept.html` + this spec.
 
 ## Palette (dark-native, matte — no cards-on-black, no purple gradients, no glow)
 - Background `#101213` (page-level), layered surface `#1A1D1E`
@@ -43,16 +44,37 @@ all native source are untouched; this concept lives only in `night-current-conce
   real optional fields (kind/status/account/name/note/date). Add is "write in the record book",
   never a bank transfer.
 - **Detail = coherent receipt sheet** with meaningful edit / delete / close icons; delete proposes confirmation.
-- **Settings** stays a small honest sheet describing current Settings scope — no invented capture
-  toggles, no dead controls — now opened from the Home header cog rather than the dock.
+- **Settings** sheet is small and honest: working view-currency selector, working reduce-motion toggle,
+  and an opt-in icon legend/help disclosure — opened from the Home header cog. No invented capture
+  toggles; anything not implemented states so in one short line or stays out of scope.
+
+## Implementation note (spec only, not displayed in-app)
+Implementation-thinking text lives here, never in the product flow copy: internal `_R#` ids, hidden
+native <select> widths used for glyph-over-closed-pickers, and class naming like `dirty` are
+engineering details. In-app copy describes only user-meaningful state (e.g. "no filter active",
+"nothing matched").
 
 ## Icon vocabulary (consistent 2px stroke, 24 grid)
 Home = simple house · Review/tray = open tray + numeric badge · Add = plus (citron filled, dock center) · Settings = cog (Home header only, not the dock) ·
-Filter = funnel · Search = magnifier · In = arrow pointing up, Out = arrow pointing down
+Filter = funnel · Search = magnifier (both show a small count dot + spoken state only while a
+filter/query is active; obvious clear actions appear only when needed) ·
+**In = one financial convention everywhere: incoming arrow to the lower-left, outgoing arrow to the
+upper-right** (summary, feed rows, Add segment, Review answer) — never the old up/down double meaning.
+Review previous/next = independent left/right chevrons beside the explicit "1 / 2" position counter.
 Ignore = minus-circle · Original alert = receipt/document · Save/Record = check · Cancel = X
 Backspace = vector erase · Close = chevron/X · Trash = delete, red only at the destructive moment.
 On the financial direction question, arrows get tiny "In"/"Out" captions — an arrow alone is
 ambiguous on a small touchscreen; no longer explanations there.
+
+## Polish round (current)
+- Home: slightly larger closed currency glyphs (~19px so ₦ stays legible), tiny In/Out captions on the
+  summary pair only, terse "Net" label, full untruncated money everywhere, compact header at 360px.
+- Review: explicit Record check (and Add Save in the calculator) renders **disabled until every
+  required fact is valid**; saveDemo/resolveReview guard methods keep rejecting invalid input.
+- Settings sheet is honestly functional: view-currency selector, reduce-motion toggle, optional icon
+  legend; export is one plain "not in this prototype yet" line. No invented toggles, no dev prose.
+- Detail sheet: note row only when set; provenance on demand.
+- Sheets: focus trap + Escape, focus restore with `preventScroll`, background screens `inert`.
 
 ## Core invariants carried unchanged from the working sandbox
 All money is exact integer minor units (`toMinor`); demo currencies all 2-decimals. Money is never
@@ -84,5 +106,5 @@ press scale `.96`, one short screen fade; no count-ups, no loops, no fake live c
   `ActivityScreen` map the conceptual Home + feed, badge state, routes
 - `ui/FlowScreens.kt` — editor / review / detail screens map to the fullscreen Add entry, Review
   focused-question flow, and receipt sheet
-- `ui/theme/CashflowTheme.kt` — charcoal/citron palette (proposed, not signed off), tabular-num typography, dark `colorScheme`
+- `ui/theme/CashflowTheme.kt` — charcoal/citron palette (user-liked dark direction), tabular-num typography, dark `colorScheme`
 - `ui/components/LedgerRow.kt` — row geometry, avatars, arrow direction cues, status economy

@@ -58,7 +58,11 @@
   .ictl{border:none;background:#1A1D1E;color:#A0A7A6;width:44px;height:44px;border-radius:14px;display:grid;place-items:center;cursor:pointer;transition:transform .16s var(--ease),color .16s,background .16s;}
   .ictl:active{transform:scale(.96);}
   .ictl.on{color:#E1F58C;background:rgba(225,245,140,.10);box-shadow:inset 0 0 0 1px rgba(225,245,140,.30);}
-  .ictl.dirty{color:#E1F58C;}
+  .ictl.dirty{color:#E1F58C;position:relative;}
+  .ictl .dcount{position:absolute;top:5px;right:5px;min-width:15px;height:15px;border-radius:8px;
+    background:#B7A9E8;color:#191327;font-size:.6rem;font-weight:750;display:grid;place-items:center;padding:0 4px;line-height:1;}
+  .btn:disabled{opacity:.4;cursor:default;}
+  .btn:disabled:active{transform:none;opacity:.4;}
   .ictl:focus-visible,.dock button:focus-visible,.keypad button:focus-visible,.seg button:focus-visible{outline:2px solid #E1F58C;outline-offset:2px;}
 
   /* on-demand search + filter controls */
@@ -66,6 +70,8 @@
   .revealfld.on{display:flex;}
   .srch{flex:1;display:flex;align-items:center;gap:.5rem;background:#1A1D1E;border-radius:14px;padding:0 12px;min-width:0;}
   .srch input{border:none;background:transparent;font:inherit;font-size:.95rem;color:#F5F4EE;outline:none;min-height:44px;flex:1;min-width:0;}
+  .srchclr{border:none;background:transparent;color:#A0A7A6;width:36px;height:36px;border-radius:10px;display:grid;place-items:center;cursor:pointer;flex:0 0 auto;transition:transform .16s var(--ease);}
+  .srchclr:active{transform:scale(.96);}
   .fwrap{display:none;gap:.4rem;flex-wrap:wrap;padding:0 16px 8px;}
   .fwrap.on{display:flex;}
   .fchip{border:none;background:#1A1D1E;color:#A0A7A6;font:inherit;font-size:.82rem;font-weight:600;padding:.35em .85em;border-radius:999px;min-height:44px;cursor:pointer;transition:transform .12s var(--ease);}
@@ -85,7 +91,7 @@
   .curglyphsel{width:100%;color:transparent;padding:0 22px 0 0 !important;}
   .curglyphsel option{color:#F5F4EE;background:#1A1D1E;}
   .curover{position:absolute;left:0;right:20px;top:0;bottom:0;display:grid;place-items:center;pointer-events:none;
-    font-weight:700;font-size:.92rem;color:#F5F4EE;line-height:1;letter-spacing:-.02em;}
+    font-weight:700;font-size:1.2rem;color:#F5F4EE;line-height:1;letter-spacing:-.02em;}
   @media(max-width:390px){.ph-head{gap:.34rem;padding:10px 10px 6px;}}
 
   /* In / Out magnitudes */
@@ -288,10 +294,10 @@
           <select class="minisel" id="periodSel" aria-label="Period" onchange="setPeriod(this.value)">
             <option value="all">All</option><option value="7">7d</option><option value="30">30d</option>
           </select>
-          <button class="ictl" id="filterBtn" aria-expanded="false" aria-label="Filters" title="Filters" onclick="toggleFilters()">
+          <button class="ictl" id="filterBtn" aria-expanded="false" aria-label="Filters, none active" title="Filters" onclick="toggleFilters()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16l-6.5 8v5L10 21v-8z"/></svg>
           </button>
-          <button class="ictl" id="searchBtn" aria-expanded="false" aria-label="Search" title="Search" onclick="toggleSearch()">
+          <button class="ictl" id="searchBtn" aria-expanded="false" aria-label="Search, no query" title="Search" onclick="toggleSearch()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
           </button>
           <button class="ictl" id="settingsBtn" aria-label="Settings" title="Settings" onclick="settingsNote()">
@@ -302,14 +308,14 @@
         <div class="iopair">
           <div class="io in">
             <span class="iotop">
-              <span class="glyph" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6M6.5 11.5L12 6l5.5 5.5"/></svg></span>
+              <span class="glyph" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6.5 17.5M6.5 10.5v7h7"/></svg></span>
               <span class="iocode" id="inCur"></span>
             </span>
             <span class="val" id="inAmt" aria-label="Money in"></span>
           </div>
           <div class="io out">
             <span class="iotop">
-              <span class="glyph" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6.5 12.5L12 18l5.5-5.5"/></svg></span>
+              <span class="glyph" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18L17.5 6.5M10.5 6.5h7v7"/></svg></span>
               <span class="iocode" id="outCur"></span>
             </span>
             <span class="val" id="outAmt" aria-label="Money out"></span>
@@ -323,12 +329,17 @@
         <div class="revealfld" id="searchwrap">
           <div class="srch">
             <input id="q" oninput="setQ(this.value)" placeholder="Search" aria-label="Search activity">
+            <button class="srchclr" id="qClear" hidden aria-label="Clear search" title="Clear search" onclick="clearQ()">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+            </button>
           </div>
         </div>
         <div class="fwrap" id="fwrap" role="group" aria-label="Filters"></div>
 
         <div id="rows"></div>
-        <div class="emptyone" id="homeEmpty" hidden><b>Nothing here yet</b>Try fewer words, or clear the filters.</div>
+        <div class="emptyone" id="homeEmpty" hidden><b>Nothing matches</b>Try fewer words — or clear your search and filters.<br>
+          <button class="fchip" style="margin-top:10px" onclick="clearHomeFilters()">Clear search & filters</button>
+        </div>
       </div>
 
       <!-- REVIEW · one item at a time -->
@@ -350,10 +361,10 @@
         <div class="moneyrow">
           <div class="seg" role="group" aria-label="Direction">
             <button id="dir-in" aria-label="Money in" title="Money in" onclick="setDir('IN')">
-              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6M6.5 11.5L12 6l5.5 5.5"/></svg>
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6.5 17.5M6.5 10.5v7h7"/></svg>
             </button>
             <button id="dir-out" aria-pressed="true" aria-label="Money out" title="Money out" onclick="setDir('OUT')">
-              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6.5 12.5L12 18l5.5-5.5"/></svg>
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18L17.5 6.5M10.5 6.5h7v7"/></svg>
             </button>
           </div>
           <span class="curwrap">
@@ -516,8 +527,11 @@ function icoBtn(cls, aria, title, svg, onclk){
   b.onclick=onclk; return b;
 }
 const SVG = {
-  up:'<svg width="__S__" height="__S__" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6M6.5 11.5L12 6l5.5 5.5"/></svg>',
-  down:'<svg width="__S__" height="__S__" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6.5 12.5L12 18l5.5-5.5"/></svg>',
+  /* financial direction, one convention everywhere: incoming = arrow down-left, outgoing = arrow up-right */
+  up:'<svg width="__S__" height="__S__" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6.5 17.5M6.5 10.5v7h7"/></svg>',
+  down:'<svg width="__S__" height="__S__" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18L17.5 6.5M10.5 6.5h7v7"/></svg>',
+  chl:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5.5L8 12l6.5 6.5"/></svg>',
+  chr:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5L16 12l-6.5 6.5"/></svg>',
   trash:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V5h6v2M6.5 7l1 13h9l1-13"/><path d="M10 11v6M14 11v6"/></svg>',
   pencil:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L20 8l-4-4L4 16z"/></svg>',
   check:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l5 5L19.5 7"/></svg>',
@@ -526,7 +540,7 @@ const SVG = {
   receipt:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-2.5-1.5L13 21l-2.5-1.5L8 21l-2-1.5z"/><path d="M9.5 8h5M9.5 12h5"/></svg>',
   geopattern:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 14c3.5 0 3.5-6 8-6s4.5 6 8 6"/><circle cx="12" cy="17.5" r="1.5" fill="currentColor" stroke="none"/></svg>'
 };
-function dirIco(d){ return '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">'+(d==='IN'?'<path d="M12 19V6M6.5 11.5L12 6l5.5 5.5"/>':'<path d="M12 5v13M6.5 12.5L12 18l5.5-5.5"/>')+'</svg>'; }
+function dirIco(d){ return '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">'+(d==='IN'?'<path d="M18 6L6.5 17.5M6.5 10.5v7h7"/>':'<path d="M6 18L17.5 6.5M10.5 6.5h7v7"/>')+'</svg>'; }
 function avatarFor(t){
   const s = (t||'').trim();
   if(!s || /^(Alert|Manual|Example)/i.test(s)) return null;
@@ -536,6 +550,31 @@ function avatarFor(t){
 const PERIOD_DAYS = {'all':Infinity,'7':7,'30':30};
 function setPeriod(p){ filt.period=p; renderHome(); }
 function setQ(v){ filt.q=v; renderHome(); }
+function clearQ(){
+  filt.q='';
+  const i=document.getElementById('q'); if(i) i.value='';
+  renderHome();
+}
+function clearHomeFilters(){
+  filt.dir=null; filt.src=null; filt.q='';
+  const i=document.getElementById('q'); if(i) i.value='';
+  renderHome();
+  toastSay('Search and filters cleared.');
+}
+/* collapsed-state scope indicator: a count dot + spoken state only while a filter or query is active */
+function miniState(btn,n,base){
+  let d=btn.querySelector('.dcount');
+  if(n){
+    btn.classList.add('dirty');
+    if(!d){ d=el('span','dcount'); btn.appendChild(d); }
+    d.textContent=n;
+    btn.setAttribute('aria-label',base+', '+n+' active');
+  } else {
+    btn.classList.remove('dirty');
+    if(d) d.remove();
+    btn.setAttribute('aria-label',base);
+  }
+}
 function setViewCur(c){ viewCur=c; renderHome(); }
 function toggleFilters(){
   const w=document.getElementById('fwrap'); const on=w.classList.toggle('on');
@@ -566,14 +605,15 @@ function renderHome(){
   const inAmtEl = document.getElementById('inAmt'), outAmtEl = document.getElementById('outAmt');
   inAmtEl.textContent  = amtOnly(in_);
   outAmtEl.textContent = amtOnly(out_);
-  document.getElementById('inCur').textContent = viewCur;
-  document.getElementById('outCur').textContent = viewCur;
+  document.getElementById('inCur').textContent = 'In \u00b7 '+viewCur;
+  document.getElementById('outCur').textContent = 'Out \u00b7 '+viewCur;
   // long amounts shrink instead of clipping — never truncate money
   [inAmtEl,outAmtEl].forEach(e2=>e2.classList.toggle('long', e2.textContent.length>8));
   const nv = document.getElementById('netAmt');
   const netAbs = Math.abs(net); // sign carried separately — fmt assumes nonnegative
   nv.textContent = (net<0?MINUS+' ':'')+fmt(netAbs, viewCur);
   nv.classList.toggle('pos', net>=0);
+  document.querySelector('.iotrail .net').textContent = 'Net';
 
   const selCur = document.getElementById('viewCurSel');
   if(!selCur.options.length) CURRENCIES.forEach(c=>selCur.appendChild(curOption(c)));
@@ -593,6 +633,12 @@ function renderHome(){
     };
     fc.appendChild(b);
   });
+  // visible way out when filters are doing real work
+  if(filt.dir||filt.src){
+    const cb=el('button','fchip','Clear filters');
+    cb.onclick=()=>{ filt.dir=null; filt.src=null; renderHome(); };
+    fc.appendChild(cb);
+  }
 
   // rows: date-grouped edge-to-edge
   const rowsEl = document.getElementById('rows'); rowsEl.textContent='';
@@ -628,8 +674,11 @@ function renderHome(){
   const n = review.length;
   const badge = document.getElementById('navBadge');
   badge.textContent = n; badge.style.display = n ? '' : 'none';
-  document.getElementById('searchBtn').classList.toggle('dirty', !!filt.q.trim());
-  document.getElementById('filterBtn').classList.toggle('dirty', !!(filt.dir||filt.src));
+  // collapsed-state scope indicators (count dot + spoken state)
+  miniState(document.getElementById('filterBtn'), (filt.dir?1:0)+(filt.src?1:0), 'Filters');
+  miniState(document.getElementById('searchBtn'), filt.q.trim()?1:0, 'Search');
+  const qc=document.getElementById('qClear');
+  if(qc) qc.hidden = !filt.q.trim();
 }
 
 /*————————————— REVIEW · one focused question —————————————*/
@@ -657,7 +706,7 @@ function renderReview(){
   bar.appendChild(icoBtn('ignico','Ignore this alert','Ignore',SVG.minus,()=>ignoreReview(r.id)));
   stage.appendChild(bar);
 
-  const src=el('div','rvsrc'); src.innerHTML=SVG.receipt; src.appendChild(el('span',null,r.src));
+  const src=el('div','rvsrc'); src.appendChild(el('span',null,r.src));
   stage.appendChild(src);
 
   if(needAmt || rvEdit){
@@ -671,7 +720,7 @@ function renderReview(){
     const lab=el('label',null,'Amount'); lab.htmlFor='rvAmt';
     const inp=document.createElement('input'); inp.id='rvAmt'; inp.type='text'; inp.inputMode='decimal'; inp.placeholder='e.g. 25.00';
     if(r.draftAmt) inp.value=r.draftAmt; else if(r.amount!=null) inp.value=r.amount;
-    inp.oninput=()=>{ r.draftAmt=inp.value; };
+    inp.oninput=()=>{ r.draftAmt=inp.value; updRec(); };
     f.appendChild(lab); f.appendChild(inp); st.appendChild(f);
     // currency row — explicit Unknown, stays unknown until the user picks; closed state is glyph-only
     const curSel=document.createElement('select');
@@ -680,7 +729,7 @@ function renderReview(){
     CURRENCIES.forEach(c=>curSel.appendChild(curOption(c)));
     curSel.value = r.cur && CURRENCIES.includes(r.cur) ? r.cur : '?';
     const curW=glyphWrap(curSel, true); const curOv=curW.ov;
-    curSel.onchange=()=>{ r.cur=curSel.value==='?' ? '?' : curSel.value; r.draftCur=curSel.value; setCurGlyph(curOv, curSel.value); };
+    curSel.onchange=()=>{ r.cur=curSel.value==='?' ? '?' : curSel.value; r.draftCur=curSel.value; setCurGlyph(curOv, curSel.value); updRec(); };
     const cd=el('div',null); cd.style.display='flex'; cd.style.gap='8px';
     const dirSeg=el('div','seg'); dirSeg.style.flex='1';
     [['IN'],['OUT']].forEach(([d])=>{
@@ -694,11 +743,18 @@ function renderReview(){
     });
     cd.appendChild(dirSeg); cd.appendChild(curW.wrap);
     st.appendChild(cd);
+    // explicit Record check — enabled only when amount, direction and currency are all real facts
     const rb=el('button','btn citron',null);
     rb.setAttribute('aria-label','Record this entry'); rb.title='Record';
     rb.innerHTML=SVG.check;
+    const updRec=()=>{
+      const raw=(document.getElementById('rvAmt')||{}).value||r.draftAmt||'';
+      const effCur=r.draftCur||((r.cur&&CURRENCIES.includes(r.cur))?r.cur:null);
+      const m=toMinor(String(raw).replace(/,/g,'').replace(',', '.'));
+      rb.disabled=!(r.dir!=='UNSET' && effCur && m!==null && m>0);
+    };
     rb.onclick=()=>saveReviewAmount(r);
-    st.appendChild(rb);
+    st.appendChild(rb); updRec();
     stage.appendChild(st);
   } else {
     stage.appendChild(el('div','rvamt',fmt(toMinor(String(r.amount)) ?? 0, r.cur)+(needCur?' ?':'')));
@@ -752,10 +808,10 @@ function renderReview(){
     stage.appendChild(act);
   }
   flow.appendChild(stage);
-  // honest nav cue between items
+  // independent position navigation: left / right chevrons, position shown in the header counter
   const nav=el('div','rvact'); nav.style.margin='10px 18px 0'; nav.style.justifyContent='center';
-  if(rIdx>0){ nav.appendChild(icoBtn('ignico','Previous item','Previous',SVG.up.replace(/__S__/g,'19'),()=>{rIdx--;rvEdit=false;renderReview();})); }
-  if(rIdx<n-1){ nav.appendChild(icoBtn('ignico','Next item','Next',SVG.down.replace(/__S__/g,'19'),()=>{rIdx++;rvEdit=false;renderReview();})); }
+  if(rIdx>0){ nav.appendChild(icoBtn('ignico','Previous item','Previous',SVG.chl,()=>{rIdx--;rvEdit=false;renderReview();})); }
+  if(rIdx<n-1){ nav.appendChild(icoBtn('ignico','Next item','Next',SVG.chr,()=>{rIdx++;rvEdit=false;renderReview();})); }
   if(nav.children.length) flow.appendChild(nav);
 }
 function saveReviewAmount(r){
@@ -827,6 +883,10 @@ function renderAdd(){
   const ks=document.getElementById('kindSel');
   if(ks && !ks.options.length){ KINDS.forEach(k=>ks.appendChild(new Option(KIND_LABEL[k]||k,k))); STATUSES.forEach(s=>document.getElementById('statSel').appendChild(new Option(s,s))); }
   if(ks){ ks.value=kind; document.getElementById('statSel').value=stat; }
+  // Save stays visually quiet until every required fact is real — saveDemo still re-validates
+  const m=toMinor(addAmt);
+  document.getElementById('saveBtn').disabled =
+    !(m!==null && m>0 && CURRENCIES.includes(addCur) && (addDir==='IN'||addDir==='OUT'));
 }
 function setKind(k){
   kind=k;
@@ -918,9 +978,10 @@ function openDetail(id){
   sheet.appendChild(kvRow('Kind', KIND_LABEL[e.kind]||e.kind));
   sheet.appendChild(kvRow('Status', e.status));
   sheet.appendChild(kvRow('Account', e.account||'Unassigned'));
+  if(e.note && !/^Example/.test(e.note) && !/^Recorded from Review/.test(e.note)) sheet.appendChild(kvRow('Note', e.note));
   sheet.appendChild(kvRow('Came in as', e.origin));
   sheet.appendChild(kvRow('Date', e.date));
-  if(e.kind==='Transfer') sheet.appendChild(el('p','setnote','Own transfer: excluded from the in / out magnitudes so legs never double count.'));
+  if(e.kind==='Transfer') sheet.appendChild(el('p','setnote','Own transfer — the transfer itself stays out of the in / out totals so it isn\u2019t counted twice.'));
   // delete confirmation lives here — proposed only
   const confirmZone=el('div',null); confirmZone.id='delZone'; confirmZone.style.marginTop='12px'; confirmZone.hidden=true;
   const confRow=el('div','rvact');
@@ -965,21 +1026,30 @@ function openSheet(){
   s.classList.add('on'); s.scrollTop=0;
   document.getElementById('scrim').classList.add('on');
   document.getElementById('phone').classList.add('sheetopen'); // dock hides behind a focused sheet
+  const body=document.querySelector('.ph-body'); if(body) body.inert=true; // background screens inert
   phoneToTop();
-  const f=s.querySelector('button,input'); if(f) f.focus({preventScroll:true});
+  const f=s.querySelector('button,input,select,summary'); if(f) f.focus({preventScroll:true});
 }
 function closeSheet(){
   const s=document.getElementById('sheet'); s.classList.remove('on');
   document.getElementById('scrim').classList.remove('on');
   document.getElementById('phone').classList.remove('sheetopen');
+  const body=document.querySelector('.ph-body'); if(body) body.inert=false;
   phoneToTop();
   if(sheetPrevFocus && sheetPrevFocus.focus) sheetPrevFocus.focus({preventScroll:true});
   sheetPrevFocus=null;
 }
 document.addEventListener('keydown', ev=>{
+  const s=document.getElementById('sheet');
   if(ev.key==='Escape'){
-    const s=document.getElementById('sheet');
     if(s.classList.contains('on')) closeSheet();
+  } else if(ev.key==='Tab' && s.classList.contains('on')){
+    // focus trap: Tab never leaves the open sheet
+    const f=[...s.querySelectorAll('button,input,select,summary,[href]')].filter(n=>!n.disabled && !n.closest('[hidden]') && !n.hidden);
+    if(!f.length) return;
+    const first=f[0], last=f[f.length-1];
+    if(ev.shiftKey && document.activeElement===first){ last.focus({preventScroll:true}); ev.preventDefault(); }
+    else if(!ev.shiftKey && document.activeElement===last){ first.focus({preventScroll:true}); ev.preventDefault(); }
   }
 });
 let tT;
@@ -991,7 +1061,35 @@ function settingsNote(){
   const sheet=document.getElementById('sheet'); sheet.textContent='';
   sheet.appendChild(el('div','grabber'));
   sheet.appendChild(el('h3',null,'Settings')).style.cssText='margin:.2rem 0 .3rem;';
-  sheet.appendChild(el('p','setnote','This concept covers Home, Review and Add. Settings keeps today\u2019s scope in the native app — currency picker, capture sources, permissions, export CSV and the setup guide — and keeps all of it; nothing here invents new capture toggles. Native files are untouched in this round.'));
+  // working view-currency choice (the same currency everywhere is not touched — this only changes what Home shows)
+  const curRow=el('div','kv');
+  curRow.appendChild(el('span','k','View currency'));
+  const sel=document.createElement('select');
+  sel.className='minisel'; sel.setAttribute('aria-label','View currency');
+  CURRENCIES.forEach(c=>sel.appendChild(curOption(c)));
+  sel.value=viewCur;
+  const cw=glyphWrap(sel); cw.wrap.style.width='72px'; cw.sel=sel;
+  curRow.appendChild(cw.wrap);
+  sheet.appendChild(curRow);
+  sel.onchange=()=>{ setViewCur(sel.value); setCurGlyph(cw.ov, sel.value); toastSay('Totals and the feed now show '+CUR_NAME[sel.value]+'.'); };
+  // working reduced-motion toggle
+  const rmRow=el('div','kv');
+  rmRow.appendChild(el('span','k','Reduce motion'));
+  const rmB=el('button','fchip', document.documentElement.classList.contains('rm')?'On':'Off');
+  rmB.setAttribute('aria-pressed', String(document.documentElement.classList.contains('rm')));
+  rmB.onclick=()=>{ rmBtn.onclick(); rmB.textContent=document.documentElement.classList.contains('rm')?'On':'Off';
+    rmB.setAttribute('aria-pressed', String(document.documentElement.classList.contains('rm'))); };
+  rmRow.appendChild(rmB);
+  sheet.appendChild(rmRow);
+  // icon legend — available when the user wants it, never in the way
+  const lg=el('details','alertdet');
+  const lgs=el('summary'); lgs.textContent='What the icons mean'; lgs.style.minHeight='44px';
+  lg.appendChild(lgs);
+  const legend=el('div','setnote');
+  legend.innerHTML='Home \u00b7 Add (+) \u00b7 Review tray, with a count of alerts waiting \u00b7 Filter funnel \u00b7 Search magnifier \u00b7 Incoming = arrow to the lower-left, outgoing = arrow to the upper-right \u00b7 Record/Save = check \u00b7 Cancel = X \u00b7 Ignore = minus-circle \u00b7 Original alert = receipt.';
+  lg.appendChild(legend);
+  sheet.appendChild(lg);
+  sheet.appendChild(el('p','setnote','Export isn\u2019t part of this prototype yet.'));
   const ok=el('button','btn citron block','Close'); ok.onclick=closeSheet;
   sheet.appendChild(ok); openSheet();
 }
@@ -1020,7 +1118,12 @@ rmBtn.onclick=()=>{
 };
 function closeSheetQuietly(){ const s=document.getElementById('sheet'); if(s.classList.contains('on')) closeSheet(); sheetPrevFocus=null; phoneToTop(); }
 function resetAll(){
-  seed(); rvEdit=false; rIdx=0; closeSheetQuietly(); renderAll(); show('home');
+  seed(); rvEdit=false; rIdx=0;
+  // close every reveal + restore collapsed states
+  ['fwrap','searchwrap'].forEach(id=>{ const w=document.getElementById(id); if(w) w.classList.remove('on'); });
+  document.getElementById('filterBtn').classList.remove('on'); document.getElementById('filterBtn').setAttribute('aria-expanded','false');
+  document.getElementById('searchBtn').classList.remove('on'); document.getElementById('searchBtn').setAttribute('aria-expanded','false');
+  closeSheetQuietly(); renderAll(); show('home');
   toastSay('Examples restored — ledger, review, drafts and filters back to seed.');
 }
 document.getElementById('resetAll').onclick=resetAll;
