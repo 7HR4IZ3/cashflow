@@ -78,6 +78,16 @@
     background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' stroke='%23A0A7A6' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
     background-repeat:no-repeat;background-position:right 10px center;}
 
+  /* icon-only closed currency pickers: glyph overlay over a hidden-width native select.
+     The native <select> keeps its real option text (full name — ISO — symbol), transparent
+     only in the closed state, so the opening chooser is unambiguous ($ can't be confused). */
+  .curwrap{position:relative;display:inline-block;width:58px;flex:0 0 auto;}
+  .curglyphsel{width:100%;color:transparent;padding:0 22px 0 0 !important;}
+  .curglyphsel option{color:#F5F4EE;background:#1A1D1E;}
+  .curover{position:absolute;left:0;right:20px;top:0;bottom:0;display:grid;place-items:center;pointer-events:none;
+    font-weight:700;font-size:.92rem;color:#F5F4EE;line-height:1;letter-spacing:-.02em;}
+  @media(max-width:390px){.ph-head{gap:.34rem;padding:10px 10px 6px;}}
+
   /* In / Out magnitudes */
   .iopair{display:flex;gap:12px;padding:4px 16px 2px;}
   .io{flex:1;background:#1A1D1E;border-radius:18px;padding:12px 14px 13px;display:flex;flex-direction:column;gap:7px;min-width:0;}
@@ -123,14 +133,19 @@
   .dock{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;gap:10px;
     padding:10px 16px calc(12px + env(safe-area-inset-bottom,0px));pointer-events:none;}
   .phone.addmode .dock,.phone.sheetopen .dock{display:none;}
-  .dockinner{pointer-events:auto;display:flex;align-items:center;gap:8px;background:rgba(26,29,30,.92);
-    backdrop-filter:blur(10px);border:1px solid rgba(245,244,238,.09);border-radius:26px;padding:7px;box-shadow:0 12px 30px -14px rgba(0,0,0,.7);}
+  .dockinner{pointer-events:auto;display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center;
+    background:rgba(26,29,30,.92);backdrop-filter:blur(10px);border:1px solid rgba(245,244,238,.09);
+    border-radius:26px;padding:7px 12px;box-shadow:0 12px 30px -14px rgba(0,0,0,.7);}
   .dock button{border:none;background:transparent;color:#A0A7A6;width:48px;height:48px;border-radius:18px;display:grid;place-items:center;cursor:pointer;
-    transition:transform .16s var(--ease),background .16s,color .16s;position:relative;}
+    transition:transform .16s var(--ease),color .16s;position:relative;}
   .dock button:active{transform:scale(.96);}
-  .dock button[aria-current="page"]{background:#262B2C;color:#E1F58C;box-shadow:inset 0 0 0 1px rgba(225,245,140,.22);}
+  #n-home{justify-self:start;} #n-add{justify-self:center;} #n-review{justify-self:end;}
+  /* active destination: citron glyph + small under-dot — no bounding box, no inset ring */
+  .dock button[aria-current="page"]{color:#E1F58C;background:transparent;}
+  .dock button[aria-current="page"]::after{content:"";position:absolute;left:50%;transform:translateX(-50%);bottom:4px;width:5px;height:5px;border-radius:3px;background:#E1F58C;}
   .dock button svg{width:23px;height:23px;}
   .dock button.add{width:60px;height:60px;border-radius:22px;background:#E1F58C;color:#1B2405;box-shadow:0 10px 24px -10px rgba(225,245,140,.5);}
+  .dock button.add[aria-current]::after{display:none;}
   .dock button.add:active{transform:scale(.96);}
   .badge{position:absolute;top:5px;right:5px;min-width:17px;height:17px;border-radius:9px;background:#B7A9E8;color:#191327;font-size:.66rem;font-weight:750;display:grid;place-items:center;padding:0 4px;letter-spacing:0;}
 
@@ -266,7 +281,10 @@
         <div class="ph-head">
           <span class="appmono" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 14c3.5 0 3.5-6 8-6s4.5 6 8 6" stroke="#E1F58C" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="17.5" r="1.6" fill="#E1F58C"/></svg></span>
           <span class="spacer"></span>
-          <select class="minisel" id="viewCurSel" aria-label="View currency" onchange="setViewCur(this.value)"></select>
+          <span class="curwrap">
+            <select class="minisel curglyphsel" id="viewCurSel" aria-label="View currency" onchange="setViewCur(this.value)"></select>
+            <span class="curover" id="viewCurGlyph" aria-hidden="true"></span>
+          </span>
           <select class="minisel" id="periodSel" aria-label="Period" onchange="setPeriod(this.value)">
             <option value="all">All</option><option value="7">7d</option><option value="30">30d</option>
           </select>
@@ -275,6 +293,9 @@
           </button>
           <button class="ictl" id="searchBtn" aria-expanded="false" aria-label="Search" title="Search" onclick="toggleSearch()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          </button>
+          <button class="ictl" id="settingsBtn" aria-label="Settings" title="Settings" onclick="settingsNote()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 00-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 00-2-1.2L14 3h-4l-.5 2.6a7 7 0 00-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 005 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1c.6.5 1.3.9 2 1.2L10 21h4l.5-2.6c.7-.3 1.4-.7 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z"/></svg>
           </button>
         </div>
 
@@ -335,7 +356,10 @@
               <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6.5 12.5L12 18l5.5-5.5"/></svg>
             </button>
           </div>
-          <select class="minisel" id="addCurSel" aria-label="Entry currency" onchange="setAddCur(this.value)"></select>
+          <span class="curwrap">
+            <select class="minisel curglyphsel" id="addCurSel" aria-label="Entry currency" onchange="setAddCur(this.value)"></select>
+            <span class="curover" id="addCurGlyph" aria-hidden="true"></span>
+          </span>
           <button class="ictl" id="moreBtn" aria-expanded="false" aria-label="More details: kind, status, who, account, note, date" title="More details" onclick="toggleMore()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg>
           </button>
@@ -366,21 +390,18 @@
       </div>
     </div>
 
-    <!-- icon-only floating dock -->
+    <!-- icon-only floating dock: Home left · Add (plus, geometric center) · Review right -->
     <div class="dock">
       <div class="dockinner" role="navigation" aria-label="Main">
-        <button id="n-home" aria-label="Home" title="Home" onclick="show('home')">
+        <button id="n-home" aria-label="Home" aria-current="page" title="Home" onclick="show('home')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 9.5V20h5v-5h4v5h5V9.5"/></svg>
-        </button>
-        <button id="n-review" aria-label="Review" title="Review" onclick="show('review')" style="position:relative;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18v6a6 6 0 01-6 6H9a6 6 0 01-6-6z"/><path d="M7 12h2M13 12h2"/></svg>
-          <span class="badge" id="navBadge">2</span>
         </button>
         <button id="n-add" class="add" aria-label="Add record" title="Add record" onclick="openAdd()">
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
         </button>
-        <button id="n-settings" aria-label="Settings" title="Settings" onclick="settingsNote()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 00-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 00-2-1.2L14 3h-4l-.5 2.6a7 7 0 00-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 005 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1c.6.5 1.3.9 2 1.2L10 21h4l.5-2.6c.7-.3 1.4-.7 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z"/></svg>
+        <button id="n-review" aria-label="Review" title="Review" onclick="show('review')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18v6a6 6 0 01-6 6H9a6 6 0 01-6-6z"/><path d="M7 12h2M13 12h2"/></svg>
+          <span class="badge" id="navBadge">2</span>
         </button>
       </div>
     </div>
@@ -402,6 +423,7 @@
       <tr><td><b>Add</b></td><td>Amount under tabs, text Cancel, labeled keypad, chips for kind/status, bottom nav visible until Cancel.</td><td>Full-screen calculator: huge tabular amount, arrow-only direction segment, currency mini-select, 56px keypad with X cancel icon, citron check Save; dots icon reveals real optional fields (kind/status selects, who/account/note/date); dock hides during entry.</td></tr>
       <tr><td><b>Detail</b></td><td>Text buttons Edit/Delete/Close under key–value pile inside white sheet.</td><td>Coherent dark receipt-sheet with a real kind/account/status/evidence reading, meaningful Edit/Trash/Close icons, delete proposes a red confirmation before the ledger clears.</td></tr>
       <tr><td><b>Outer chrome</b></td><td>H1 + lede paragraph + visible tab pills before the phone; explainer cards below.</td><td>One quiet line "Cashflow · New direction" + Example-data cue; icon controls for preview views, motion and reset; reference table collapsed after the phone.</td></tr>
+      <tr><td><b>Refinement</b></td><td>Dock = Home / Review / Add orb / Settings cog, each with a selected box or inset ring; currency/period selects show text codes everywhere.</td><td>Dock = exactly three actions, Home left · plus Add at the geometric center (3 equal grid columns) · Review right with badge; no per-icon borders, backplates or inset rings — the active destination is a citron glyph with a small under-dot (ring only for keyboard focus); Settings cog moved into the Home header, opening the same settings note; currency pickers closed show the currency glyph only (₦ $ £ € KSh ₵), while the open chooser always gives the full name — ISO — symbol, with Unknown spelled out and never silently defaulted.</td></tr>
     </table>
     </div></div>
   </details>
@@ -419,6 +441,22 @@
 'use strict';
 /* ————————————————— sandbox state (example only) ————————————————— */
 const CURRENCIES = ['NGN','USD','GBP','EUR','KES','GHS'];
+const CUR_GLYPH = {NGN:'\u20A6',USD:'$',GBP:'\u00A3',EUR:'\u20AC',KES:'KSh',GHS:'\u20B5'};
+const CUR_NAME = {NGN:'Nigerian naira',USD:'US dollar',GBP:'British pound',EUR:'Euro',KES:'Kenyan shilling',GHS:'Ghanaian cedi'};
+/* chooser option = full name — ISO — symbol, so a glyph alone can never be ambiguous */
+function curOption(c){ return new Option(CUR_NAME[c]+' \u2014 '+c+' '+CUR_GLYPH[c], c); }
+function setCurGlyph(ov, cur){
+  ov.textContent = (cur && CURRENCIES.includes(cur)) ? CUR_GLYPH[cur] : '?';
+}
+/* glyph-only closed state around a native select; chooser keeps real full currency names */
+function glyphWrap(sel, wide){
+  sel.classList.add('minisel','curglyphsel');
+  const wrap = el('span','curwrap'); if(wide) wrap.style.width='100%';
+  const ov = el('span','curover'); ov.setAttribute('aria-hidden','true');
+  wrap.appendChild(sel); wrap.appendChild(ov);
+  setCurGlyph(ov, sel.value);
+  return {wrap, ov};
+}
 const ANCHOR = '2026-10-26';
 let entries = [], review = [], editingId = null, dirty=false, rIdx=0, rvEdit=false;
 let filt = {period:'all', q:'', dir:null, src:null};
@@ -538,8 +576,9 @@ function renderHome(){
   nv.classList.toggle('pos', net>=0);
 
   const selCur = document.getElementById('viewCurSel');
-  if(!selCur.options.length) CURRENCIES.forEach(c=>selCur.appendChild(new Option(c, c)));
+  if(!selCur.options.length) CURRENCIES.forEach(c=>selCur.appendChild(curOption(c)));
   selCur.value = viewCur;
+  setCurGlyph(document.getElementById('viewCurGlyph'), viewCur);
   document.getElementById('periodSel').value = filt.period;
 
   // filter chips only inside the reveal
@@ -634,13 +673,14 @@ function renderReview(){
     if(r.draftAmt) inp.value=r.draftAmt; else if(r.amount!=null) inp.value=r.amount;
     inp.oninput=()=>{ r.draftAmt=inp.value; };
     f.appendChild(lab); f.appendChild(inp); st.appendChild(f);
-    // currency row — explicit Unknown, stays unknown until the user picks
-    const curSel=document.createElement('select'); curSel.className='minisel'; curSel.style.width='100%';
+    // currency row — explicit Unknown, stays unknown until the user picks; closed state is glyph-only
+    const curSel=document.createElement('select');
     curSel.setAttribute('aria-label','Currency');
-    const uk=new Option('Unknown','?'); uk.disabled=false; curSel.appendChild(uk);
-    CURRENCIES.forEach(c=>curSel.appendChild(new Option(c,c)));
+    const uk=new Option('Unknown \u2014 currency stays unknown until picked','?'); uk.disabled=false; curSel.appendChild(uk);
+    CURRENCIES.forEach(c=>curSel.appendChild(curOption(c)));
     curSel.value = r.cur && CURRENCIES.includes(r.cur) ? r.cur : '?';
-    curSel.onchange=()=>{ r.cur=curSel.value==='?' ? '?' : curSel.value; r.draftCur=curSel.value; };
+    const curW=glyphWrap(curSel, true); const curOv=curW.ov;
+    curSel.onchange=()=>{ r.cur=curSel.value==='?' ? '?' : curSel.value; r.draftCur=curSel.value; setCurGlyph(curOv, curSel.value); };
     const cd=el('div',null); cd.style.display='flex'; cd.style.gap='8px';
     const dirSeg=el('div','seg'); dirSeg.style.flex='1';
     [['IN'],['OUT']].forEach(([d])=>{
@@ -652,7 +692,7 @@ function renderReview(){
       b.onclick=()=>{ r.dir=d; r.draftDir=d; renderReview(); };
       dirSeg.appendChild(b);
     });
-    cd.appendChild(dirSeg); cd.appendChild(curSel);
+    cd.appendChild(dirSeg); cd.appendChild(curW.wrap);
     st.appendChild(cd);
     const rb=el('button','btn citron',null);
     rb.setAttribute('aria-label','Record this entry'); rb.title='Record';
@@ -663,14 +703,15 @@ function renderReview(){
   } else {
     stage.appendChild(el('div','rvamt',fmt(toMinor(String(r.amount)) ?? 0, r.cur)+(needCur?' ?':'')));
     if(needCur){
-      // amount is known but currency was never read — real chooser, Unknown until picked
-      const curSel=document.createElement('select'); curSel.className='minisel';
+      // amount is known but currency was never read — real chooser, Unknown until picked, closed = glyph
+      const curSel=document.createElement('select');
       curSel.setAttribute('aria-label','Currency');
-      curSel.appendChild(new Option('Unknown','?'));
-      CURRENCIES.forEach(c=>curSel.appendChild(new Option(c,c)));
+      curSel.appendChild(new Option('Unknown \u2014 currency stays unknown until picked','?'));
+      CURRENCIES.forEach(c=>curSel.appendChild(curOption(c)));
       curSel.value='?';
-      curSel.onchange=()=>{ r.cur=curSel.value==='?' ? '?' : curSel.value; r.draftCur=curSel.value; renderReview(); };
-      const cd2=el('div',null); cd2.style.marginTop='8px'; cd2.appendChild(curSel);
+      const curW2=glyphWrap(curSel, true); const curOv2=curW2.ov;
+      curSel.onchange=()=>{ r.cur=curSel.value==='?' ? '?' : curSel.value; r.draftCur=curSel.value; setCurGlyph(curOv2, curSel.value); renderReview(); };
+      const cd2=el('div',null); cd2.style.marginTop='8px'; cd2.appendChild(curW2.wrap);
       stage.appendChild(cd2);
     }
     if(needDir){
@@ -777,8 +818,9 @@ function renderAdd(){
   big.textContent=''; const live=el('span',addAmt?'':'dim',addAmt||'0');
   big.appendChild(live);
   const selC=document.getElementById('addCurSel');
-  if(!selC.options.length) CURRENCIES.forEach(c=>selC.appendChild(new Option(c, c)));
+  if(!selC.options.length) CURRENCIES.forEach(c=>selC.appendChild(curOption(c)));
   selC.value=addCur;
+  setCurGlyph(document.getElementById('addCurGlyph'), addCur);
   const di=document.getElementById('dir-in'), doo=document.getElementById('dir-out');
   di.classList.toggle('sel',addDir==='IN'); doo.classList.toggle('sel',addDir==='OUT');
   di.setAttribute('aria-pressed',addDir==='IN'); doo.setAttribute('aria-pressed',addDir==='OUT');

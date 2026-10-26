@@ -13,31 +13,42 @@ all native source are untouched; this concept lives only in `night-current-conce
 - Prior direction: warm white app `#FAFAF8` + mint accent + labeled full-width nav → replaced wholesale.
 
 ## Composition (completely new)
-- **Activity-first home.** Compact contextual header (glyph/monogram + currency + period, tiny selects).
+- **Activity-first home.** Compact contextual header (glyph/monogram + currency + period, tiny selects,
+  and the Settings cog — the only place Settings lives, styled as an icon with aria-label/title and no
+  visible label). Icon-only closed currency pickers: the compact coin-glyph button (₦ $ £ € KSh ₵,
+  real currency glyphs, readable at 360px via wrapping) is all the closed selector shows; opening it
+  shows full name — ISO — symbol for each supported currency, screen readers announce the selected
+  currency in full, and the underlying value stays the ISO code.
   One horizontal In/Out magnitude pair — arrows convey direction — with an understated "Recorded net".
   No giant net hero with a stack of utility labels. The date-grouped, edge-to-edge feed is the centerpiece.
 - **Feed rows**: geometric/initial avatars, name + full amount hierarchy, arrows for direction, quiet status
   only when it matters (Unclassified, Pending, Failed). Origin/metadata lives in the detail receipt only.
 - **Filter & search** are icon buttons revealing their controls on demand; no always-on text controls.
-- **Icon-only floating dock** (not the labeled nav bar): Home, Review tray with numeric badge, central Add
-  (citron filled circle), Settings cog. 44–48px targets, `aria-label`+`title` (no visible words),
-  `aria-current="page"` on the active destination, selection shown by fill/shape — not color alone.
-  Hidden while Add is focused or a review sheet is open.
+- **Icon-only floating dock** (not the labeled nav bar): exactly three actions — Home on the left,
+  the central Add plus (citron filled, no individual border) held at the geometric center via three
+  equal grid columns, and the Review tray with numeric badge on the right. No per-icon borders,
+  backplates or inset shadows; the active destination keeps `aria-current="page"` and is shown by a
+  citron glyph with a small under-dot — no bounding-box ring. 44–48px targets, `aria-label`+`title`
+  (no visible words), non-color cue via the dot; only the keyboard `:focus-visible` ring remains.
+  Settings is not in the dock: its cog lives in the Home header. Hidden while Add is focused or a
+  review sheet is open.
 - **Review = one focused question at a time** with position progress ("1 / 2"). Full amount + currency, or a
   genuine "Amount missing" affordance where the amount editor is shown right away (not hidden behind a gate).
   Currency carries an explicit "Unknown" option — it stays unknown until picked; never silently defaults to NGN.
   In/Out as arrow buttons with tiny In/Out captions + accessible labels (no signing of unknown items).
   Picking a direction never records; an explicit Record check-button (icon-only) records only when valid.
   Ignore is a distinct icon control; the original alert opens from a receipt/document icon. No big warning cards.
-- **Add = full-screen calculator.** Huge tabular amount, currency chooser, direction segment with arrow icons,
-  48–56px keypad, citron check/save, X cancel, a details icon revealing real optional fields
-  (kind/status/account/name/note/date). Add is "write in the record book", never a bank transfer.
+- **Add = full-screen calculator.** Huge tabular amount, glyph-closed currency chooser, direction
+  segment with arrow icons, 48–56px keypad, citron check/save, X cancel, a details icon revealing
+  real optional fields (kind/status/account/name/note/date). Add is "write in the record book",
+  never a bank transfer.
 - **Detail = coherent receipt sheet** with meaningful edit / delete / close icons; delete proposes confirmation.
-- **Settings**: a small honest sheet describing current Settings scope — no invented capture toggles, no dead controls.
+- **Settings** stays a small honest sheet describing current Settings scope — no invented capture
+  toggles, no dead controls — now opened from the Home header cog rather than the dock.
 
 ## Icon vocabulary (consistent 2px stroke, 24 grid)
-Home = simple house · Review/tray = open tray + numeric badge · Add = plus (citron filled)
-Settings = cog · Filter = funnel · Search = magnifier · In = arrow pointing up, Out = arrow pointing down
+Home = simple house · Review/tray = open tray + numeric badge · Add = plus (citron filled, dock center) · Settings = cog (Home header only, not the dock) ·
+Filter = funnel · Search = magnifier · In = arrow pointing up, Out = arrow pointing down
 Ignore = minus-circle · Original alert = receipt/document · Save/Record = check · Cancel = X
 Backspace = vector erase · Close = chevron/X · Trash = delete, red only at the destructive moment.
 On the financial direction question, arrows get tiny "In"/"Out" captions — an arrow alone is
