@@ -47,6 +47,8 @@ The previous Home presents Recorded activity, All time, Net recorded, and Net se
 
 The GLM-authored prototype was rendered at 360px and 728px. The narrow document stays within 360px; the navigation-map table has its own horizontal scroll region. Home, Review, and Add were visually inspected. Scripted browser checks confirmed the seeded net of -875,050 minor units, edit-in-place without an extra record, own-transfer exclusion, USD Review resolution into a separate USD entry, unchanged NGN totals, precision/unsafe-integer rejection, and reset of the example state. These checks apply to the HTML sandbox, not to the native app. No Compose source changed in this comparison pass.
 
+The refinement pass also checked the preview inside light and dark host themes. Direct button interactions confirmed that choosing In/Out in Review does not record automatically, explicit Record creates the entry, a missing-amount item can be completed, and invalid saves keep the completion sheet open. Opening a detail sheet, editing, saving, and resetting no longer shifts the phone's internal scroll position. Pending entries remain excluded, and the manual reduced-motion control was checked. The native UI is still unchanged.
+
 ## Sources
 
 - [Copilot Transactions overview](https://help.copilot.money/en/articles/9554412-transactions-tab-overview)

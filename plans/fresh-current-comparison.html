@@ -88,6 +88,9 @@
   .screen{display:none;padding:6px 0 110px;animation:sfade .18s var(--ease);}
   .screen.on{display:block;}
   @keyframes sfade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+  /* one short stagger, applied by JS only on a real tab switch (class .sw, cleared right after) */
+  @keyframes rowin{from{opacity:0;transform:translateY(7px);}to{opacity:1;transform:none;}}
+  .trow.sw{animation:rowin .2s var(--ease) both;}
   .appbar{display:flex;align-items:center;gap:.6rem;padding:8px 16px 10px;}
   .appbar .nm{font-weight:750;letter-spacing:-.02em;font-size:1.05rem;}
   .appbar .sp{margin-left:auto;}
@@ -102,7 +105,7 @@
   .badge{position:absolute;top:2px;right:4px;min-width:18px;height:18px;border-radius:9px;background:var(--violet);color:#fff;font-size:.68rem;font-weight:700;display:grid;place-items:center;padding:0 5px;}
 
   /* ————— home ————— */
-  .hero{padding:6px 16px 14px;}
+  .hero{padding:0 16px 4px;}
   .hero .ovl{font-size:.78rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);}
   /* Compact selectors: two native selects replace always-on chip rows */
   .selrow{display:flex;gap:.5rem;flex-wrap:wrap;margin:8px 0 2px;}
@@ -111,13 +114,19 @@
   .chip{border:1px solid var(--line);background:var(--surface);color:var(--ink2);font:inherit;font-size:.82rem;font-weight:600;padding:.4em .85em;border-radius:999px;cursor:pointer;min-height:44px;transition:transform .12s var(--ease);}
   .chip:active{transform:scale(.96);}
   .chip.sel{background:var(--ink);color:#fff;border-color:var(--ink);}
-  .netlab{color:var(--ink3);font-size:.8rem;margin-top:10px;}
-  .netamt{font-size:2.1rem;font-weight:750;letter-spacing:-.03em;font-variant-numeric:tabular-nums;}
-  .iosum{display:flex;gap:22px;margin-top:8px;}
+  .netrow{display:flex;align-items:center;gap:.45rem;margin-top:14px;}
+  .netmark{color:var(--mint);display:inline-flex;flex:0 0 auto;}
+  .netlab{color:var(--ink3);font-size:.78rem;font-weight:650;}
+  .netamt{font-size:2.25rem;font-weight:750;letter-spacing:-.03em;font-variant-numeric:tabular-nums;margin-top:1px;min-height:1.15em;}
+  .iosum{display:flex;gap:22px;margin-top:6px;}
   .iosum .lab{font-size:.78rem;font-weight:650;color:var(--ink3);}
   .iosum .val{font-weight:700;font-variant-numeric:tabular-nums;font-size:1rem;}
   .val.in{color:var(--mint-deep);}
-  .cnt-check{display:inline-flex;align-items:center;gap:.45rem;background:var(--violet-soft);color:var(--violet);border:1px solid transparent;border-radius:999px;padding:.55em 1em;font:inherit;font-size:.85rem;font-weight:650;cursor:pointer;margin-top:12px;min-height:44px;}
+  .acthead{display:flex;align-items:center;gap:.5rem;padding:14px 16px 0;}
+.acthead .actttl{font-size:.78rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);}
+/* quiet violet shortcut riding on the Activity heading — not a standalone banner row */
+.cnt-check{display:inline-flex;align-items:center;gap:.4rem;border:none;background:transparent;color:var(--violet);font:inherit;font-size:.78rem;font-weight:700;cursor:pointer;margin-left:auto;min-height:44px;padding:0 .7em;border-radius:12px;}
+.cnt-check:active{transform:scale(.96);transform-origin:right center;}
   .search{margin:4px 16px 8px;display:flex;align-items:center;gap:.5rem;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:0 12px;}
   .search input{border:none;background:transparent;font:inherit;font-size:.95rem;color:var(--ink);outline:none;min-height:44px;flex:1;min-width:0;}
   .search input::placeholder{color:var(--ink4);}
@@ -126,15 +135,17 @@
   /* Row grid: never wider than the phone, money column never squeezed out. */
   .trow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid var(--line-soft);width:100%;border-left:none;border-right:none;border-top:none;background:transparent;font:inherit;text-align:left;cursor:pointer;transition:background .15s;min-height:60px;box-sizing:border-box;}
   .trow:active{background:var(--ink-soft);}
-  .dot-g{width:38px;height:38px;border-radius:13px;display:grid;place-items:center;flex:0 0 auto;background:var(--mint-soft);}
-  .dot-g.out{background:var(--ink-soft);}
+  .av{width:38px;height:38px;border-radius:13px;display:grid;place-items:center;flex:0 0 auto;background:var(--ink-soft);color:var(--ink);font-weight:750;font-size:.98rem;letter-spacing:-.02em;}
+  .av.in{background:var(--mint-soft);color:var(--mint-deep);}
   .trow .leadwrap{min-width:0;}
   .trow .lead{font-size:1rem;font-weight:600;display:block;min-width:0;overflow-wrap:break-word;}
   .trow .sub{font-size:.81rem;color:var(--ink2);margin-top:1px;display:block;min-width:0;overflow-wrap:break-word;}
-  .trow .uncla{font-size:.72rem;color:var(--ink3);border:1px solid var(--line);border-radius:999px;padding:1px 7px;margin-left:6px;white-space:nowrap;}
+  .trow .sub:empty{display:none;}
   .trow .amtr{min-width:0;text-align:right;}
   .trow .amt{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;font-size:1rem;}
-  .trow .amtdir{font-weight:650;color:var(--ink3);font-size:.78rem;display:block;}
+  .trow .amtdir{font-weight:650;color:var(--ink3);font-size:.78rem;display:inline-flex;align-items:center;gap:.3em;justify-content:flex-end;margin-left:6px;}
+  .trow .amtdir.in{color:var(--mint-deep);}
+  /* deliberate mass for the real content: first-line name/amount dominate */
   .emptyone{margin:26px 16px;text-align:center;color:var(--ink3);font-size:.9rem;}
   .emptyone b{color:var(--ink);display:block;font-size:1rem;margin-bottom:.3rem;}
 
@@ -155,7 +166,13 @@
   /* ————— review ————— */
   .rvcard{margin:10px 16px 0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:14px;}
   .rvt{display:inline-flex;align-items:center;gap:.4rem;font-size:.78rem;font-weight:700;color:var(--violet);background:var(--violet-soft);border-radius:999px;padding:.25em .7em;}
-  .rvamt{font-size:1.15rem;font-weight:700;letter-spacing:-.01em;font-variant-numeric:tabular-nums;margin:.55rem 0 .1rem;}
+  .rvamt{font-size:1.35rem;font-weight:750;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin:.55rem 0 .1rem;}
+  .rvq{font-size:1rem;font-weight:650;color:var(--ink);margin:.55rem 0 .55rem;}
+  .ioq{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .ioq button{border:1px solid var(--line);background:var(--surface);font:inherit;font-weight:700;min-height:48px;border-radius:14px;color:var(--ink2);cursor:pointer;transition:transform .16s var(--ease),background .16s;}
+  .ioq button:active{transform:scale(.96);}
+  .ioq button.sel-in{background:var(--mint);color:var(--mint-ink);border-color:transparent;}
+  .ioq button.sel-out{background:var(--ink);color:#fff;border-color:var(--ink);}
   .rvreason{font-size:.85rem;color:var(--ink2);line-height:1.45;}
   .rvcard details{margin-top:8px;font-size:.8rem;color:var(--ink3);}
   .rvcard summary{cursor:pointer;color:var(--mint-deep);font-weight:650;min-height:44px;display:flex;align-items:center;}
@@ -169,13 +186,20 @@
   .rvdone{margin:10px 16px 0;background:var(--mint-soft);border-radius:var(--r-md);padding:12px 14px;font-size:.88rem;color:var(--mint-deep);}
 
   /* ————— add ————— */
-  .amt-hero{padding:4px 16px 8px;}
-  .amt-big{font-size:2.6rem;font-weight:750;letter-spacing:-.03em;font-variant-numeric:tabular-nums;min-height:1.2em;color:var(--ink);}
+  .amt-hero{padding:6px 16px 10px;}
+  .amt-big{font-size:3rem;font-weight:750;letter-spacing:-.03em;font-variant-numeric:tabular-nums;min-height:1.2em;color:var(--ink);}
   .amt-big.dim{color:var(--ink4);}
+  /* money controls grouped on one row: direction gets the width, currency rides beside it */
+  .moneyrow{display:flex;gap:.5rem;align-items:center;margin:0 16px 10px;}
+  .moneyrow .seg{margin:0;flex:1;}
+  .moneyrow .minisel{flex:0 0 auto;min-width:104px;}
   .chipscroll{display:flex;gap:.4rem;overflow-x:auto;padding:0 16px 6px;scrollbar-width:none;min-height:44px;align-items:center;}
   .seg{display:flex;margin:2px 16px 10px;background:var(--ink-soft);border-radius:14px;padding:3px;}
   .seg button{flex:1;border:none;background:transparent;font:inherit;font-size:.88rem;font-weight:650;min-height:44px;border-radius:11px;color:var(--ink2);cursor:pointer;}
   .seg button.sel{background:var(--surface);color:var(--ink);box-shadow:0 1px 4px rgba(23,23,26,.12);}
+  /* direction gets semantic colour only where it is semantic: In = mint, Out = ink */
+  #dir-in.sel{background:var(--mint);color:var(--mint-ink);box-shadow:none;}
+  #dir-out.sel{background:var(--ink);color:#fff;box-shadow:none;}
   .fldlab{font-size:.78rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);padding:10px 16px 6px;}
   .morel{display:flex;align-items:center;gap:.5rem;margin:2px 16px 10px;border:1px dashed var(--line);border-radius:14px;background:transparent;color:var(--ink2);font:inherit;font-size:.88rem;font-weight:600;min-height:44px;padding:0 14px;cursor:pointer;}
   .fieldlines{margin:0 16px;display:none;flex-direction:column;gap:8px;}
@@ -187,9 +211,11 @@
   .infield input:focus{outline:2px solid var(--mint);outline-offset:-2px;}
   .savebar{padding:10px 16px 14px;} /* in-flow below the keypad — no absolute overlay */
   .savebar .err{font-size:.82rem;color:var(--fail);margin:0 4px 6px;line-height:1.4;}
-  .kpad{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:8px 16px 0;}
-  .kpad button{border:none;background:transparent;font:inherit;font-size:1.25rem;font-weight:600;color:var(--ink);min-height:52px;border-radius:14px;cursor:pointer;transition:background .1s;}
+  .kpad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px 14px 2px;}
+  .kpad button{border:none;background:transparent;font:inherit;font-size:1.35rem;font-weight:650;color:var(--ink);min-height:56px;border-radius:16px;cursor:pointer;transition:background .1s;}
   .kpad button:active{background:var(--ink-soft);}
+  .kpad .kbx{color:var(--ink2);}
+  .kpad .kbx svg{width:23px;height:23px;display:block;margin:0 auto;}
   .errchip{display:inline-flex;align-items:center;min-height:44px;padding:.4em .8em;border-radius:999px;background:var(--fail-soft);color:var(--fail);font-size:.82rem;font-weight:650;}
 
   /* ————— sheet ————— */
@@ -198,7 +224,10 @@
   .sheet{position:absolute;left:0;right:0;bottom:0;background:var(--surface);border-radius:24px 24px 0 0;padding:10px 18px calc(18px + env(safe-area-inset-bottom,0px));transform:translateY(105%);transition:transform .26s var(--ease);max-height:82%;overflow-y:auto;}
   .sheet:not(.on){visibility:hidden;} /* no interaction while closed */
   @media(prefers-reduced-motion:reduce){.sheet{transition:none;}}
-  html.rm .scrim,html.rm .sheet,html.rm .screen,html.rm .trow,html.rm .btn,html.rm .nb-add,html.rm .ptab,html.rm .chip,html.rm .neutbtn{transition:none !important;animation:none !important;}
+  @media(prefers-reduced-motion:reduce){.sheet{transition:none;}}
+  html.rm .scrim,html.rm .sheet,html.rm .screen,html.rm .trow,html.rm .btn,html.rm .nb-add,html.rm .ptab,html.rm .chip,html.rm .neutbtn,html.rm .ioq button,html.rm .cnt-check{transition:none !important;animation:none !important;}
+  html.rm .trow.sw{animation:none !important;}
+  @media(prefers-reduced-motion:reduce){.trow.sw{animation:none !important;}}
   .sheet.on{transform:none;}
   .grabber{width:36px;height:4px;border-radius:2px;background:var(--line);margin:2px auto 12px;}
   .kv{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line-soft);font-size:.9rem;}
@@ -243,7 +272,7 @@
         <circle cx="12" cy="17.5" r="1.6" fill="#2BDF9C"/>
       </svg>
     </span>
-    <h1 style="margin:0;font-size:1.25rem;">Fresh current — Cashflow redesign</h1>
+    <h1 style="margin:0;font-size:1.05rem;">Fresh current — Cashflow</h1>
     <span class="pill mint">Option 1 · confirmed</span>
   </div>
 
@@ -252,10 +281,9 @@
     <button class="neutbtn" id="resetAll" title="Restores sandbox examples and clears every draft, filter and review change">Reset examples</button>
   </div>
 
-  <p class="lede px">Soft-white ground, near-black ink, one vivid mint accent, open date-grouped rows instead of cards, and a single “to check” pill. Everything in the phone is <b>Example sandbox data</b>: it lives in this page only and never reads or writes the app. Sandbox date is fixed at <b>26 Oct 2026</b>.</p>
+  <p class="lede px" style="margin:.15rem 0 0;font-size:.85rem;">Interactive concept · example data — sandbox only, dates fixed at 26 Oct 2026, nothing leaves this page.</p>
 
   <!-- ——————— PHONE ——————— -->
-  <h2>Interactive preview · Example sandbox</h2>
   <div class="phonebar" role="tablist" aria-label="Preview screens">
     <button class="ptab" role="tab" id="t-home" aria-selected="true" aria-controls="s-home" onclick="show('home')">Home</button>
     <button class="ptab" role="tab" id="t-review" aria-selected="false" aria-controls="s-review" onclick="show('review')">Review <span id="rvCountTab"></span></button>
@@ -278,7 +306,6 @@
       <!-- HOME -->
       <div class="screen on" id="s-home" role="tabpanel" aria-label="Home preview">
         <div class="hero">
-          <div class="ovl" id="periodLabel">Totals scope</div>
           <div class="selrow">
             <select class="minisel" id="viewCurSel" aria-label="View currency for totals and history" onchange="setViewCur(this.value)"></select>
             <select class="minisel" id="periodSel" aria-label="Period" onchange="setPeriod(this.value)">
@@ -287,21 +314,25 @@
               <option value="30">Last 30 days</option>
             </select>
           </div>
-          <div class="netlab" id="netLabel">Net sent</div>
-          <div class="netamt" id="netAmt"></div>
+          <div class="netrow">
+            <span class="netmark" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 14c3.5 0 3.5-6 8-6s4.5 6 8 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="17.5" r="1.6" fill="currentColor"/></svg></span>
+            <span class="netlab" id="netLabel">Recorded net</span>
+          </div>
+          <div class="netamt" id="netAmt" aria-live="polite"></div>
           <div class="iosum">
             <div><div class="lab">Money in</div><div class="val in" id="inAmt"></div></div>
             <div><div class="lab">Money out</div><div class="val" id="outAmt"></div></div>
           </div>
-          <div class="scopeline">
-            <span class="tagchip" id="scopeNote"></span>
-            <details class="scopedet">
-              <summary aria-label="What the summary scope means">About this scope<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="margin-left:.3em;"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.1"/></svg></summary>
-              <p>Summary scope: completed records only · own transfers (both legs) excluded · pending and failed records never counted</p>
-            </details>
-          </div>
+          <details class="scopedet">
+            <summary aria-label="What the summary scope means">What counts<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="margin-left:.3em;"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.1"/></svg></summary>
+            <p>Completed records only · own transfers (both legs) excluded · pending and failed records never counted · currencies are never blended. Period and filters above narrow both this summary and the rows below.</p>
+          </details>
+        </div>
+
+        <div class="acthead">
+          <span class="actttl">Activity</span>
           <button class="cnt-check" id="checkPill" onclick="show('review')" aria-label="Open Review: items to check">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 3l9 16H3z" stroke-linejoin="round"/><path d="M12 10v4M12 16.6v.1"/></svg>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 3l9 16H3z" stroke-linejoin="round"/><path d="M12 10v4M12 16.6v.1"/></svg>
             <span id="checkTxt">2 to check</span>
           </button>
         </div>
@@ -335,15 +366,14 @@
           <button class="btn quiet" id="addCancel" onclick="backFromAdd()">Cancel</button>
         </div>
         <div class="amt-hero">
-          <div class="selrow" style="margin:0 0 4px;">
-            <select class="minisel" id="addCurSel" aria-label="Entry currency" onchange="setAddCur(this.value)"></select>
-            <span class="tagchip">amount · Example sandbox</span>
-          </div>
           <div class="amt-big" id="amtBig" aria-live="polite"><span class="dim">0</span></div>
         </div>
-        <div class="seg" role="group" aria-label="Direction">
-          <button id="dir-in" onclick="setDir('IN')">In</button>
-          <button id="dir-out" class="sel" onclick="setDir('OUT')">Out</button>
+        <div class="moneyrow">
+          <div class="seg" role="group" aria-label="Direction">
+            <button id="dir-in" onclick="setDir('IN')">In</button>
+            <button id="dir-out" class="sel" onclick="setDir('OUT')">Out</button>
+          </div>
+          <select class="minisel" id="addCurSel" aria-label="Entry currency" onchange="setAddCur(this.value)"></select>
         </div>
         <div class="px" style="padding-bottom:4px;">
           <button class="morel" onclick="toggleMore()" aria-expanded="false" id="moreBtn">
@@ -390,7 +420,22 @@
     <div class="toast" id="toast" role="status"></div>
   </div>
 
-  <p class="foot" style="margin-top:.8rem;border:none;padding-top:.4rem;">Every interaction runs on Example data inside this page — nothing saves, syncs or leaves it. <b>Reset examples</b> at the top restores all drafts, ledger, review and filters.</p>
+  <!-- ——————— WHAT IMPROVED ——————— -->
+  <details class="board"><summary>What improved this round — before → after</summary>
+  <div class="px" style="padding-top:.5rem;">
+  <div class="mapscroll" role="region" aria-label="What improved table" tabindex="0">
+  <table class="map">
+    <tr><th>Group</th><th>Before</th><th>After</th></tr>
+    <tr><td><b>Chrome</b></td><td>Large title, long lede paragraph, visible nav table and notes pushing the phone below the fold.</td><td>Compact editorial heading + one "Interactive concept · example data" line, neutral Reset / Reduced-motion controls; research, nav map and technical notes live in collapsed details <i>after</i> the phone.</td></tr>
+    <tr><td><b>Home</b></td><td>Stacked label pile ("Recorded activity NGN", "Net sent", all-time scope chip, About-this-scope) before any rows; big violet "to check" banner.</td><td>Compact currency/period selects, one honest "Recorded net" with a stable signed amount (mint when positive), tight In/Out pair, eligibility behind a small info details; rows start high; a quiet violet "2 to check" rides the <b>Activity</b> heading; small mint current-mark at the focal edge (no sparkline, no fake live capture).</td></tr>
+    <tr><td><b>Rows</b></td><td>Same arrow in every tile, "Capture/Manual" origin labels, bordered "not classified" pills.</td><td>Person-initial / geometric avatars (no guessed merchant categories or logos), origin hidden on normal rows (kept in the detail sheet), account shown when assigned, quiet "Unclassified" text, name/amount dominate and wrap gracefully at 360 with currency never clipped.</td></tr>
+    <tr><td><b>Review</b></td><td>Generic Edit / Record / Ignore triple with a disabled key before facts exist.</td><td>One concrete missing-fact question — "Did this come in or go out?" — beside the full amount (e.g. USD 50.00) with direct In/Out choices; choosing never auto-records; a single explicit Record appears only once facts are valid; Ignore is secondary; amount-first completion for unreadable amounts.</td></tr>
+    <tr><td><b>Entry (Add)</b></td><td>Texty backspace glyph, amount buried under selectors, chips for currency.</td><td>Amount as the focal point, currency + In/Out grouped on one intentional row, tactile keypad (optical spacing, thin vector backspace), More-details kept quiet, Save in flow below the keys, explicit Cancel, no bottom nav.</td></tr>
+    <tr><td><b>Motion</b></td><td>Single fade on every screen change.</td><td>160–240 ms purposeful transitions, press scale .96, one short row stagger on a real tab switch only; no count-ups, no infinite pulses; honours prefers-reduced-motion and the manual toggle.</td></tr>
+  </table>
+  </div>
+  </div>
+  </details>
 
   <!-- ——————— BORROWED vs REJECTED ——————— -->
   <details class="board"><summary>Research behind this proposal — borrowed vs rejected (collapsible)</summary>
@@ -432,8 +477,8 @@
   </details>
 
   <!-- ——————— NAV MAP ——————— -->
-  <h2>Proposed navigation map</h2>
-  <div class="px">
+  <details class="board"><summary>Proposed navigation map (collapsible)</summary>
+  <div class="px" style="padding-top:.5rem;">
   <div class="mapscroll" role="region" aria-label="Proposed navigation map table" tabindex="0">
   <table class="map">
     <tr><th>Destination</th><th>Contains</th><th>Status vs today</th></tr>
@@ -444,10 +489,14 @@
   </table>
   </div>
   </div>
+  </details>
 
-  <div class="foot" style="margin-top:1.5rem;">
-    Sandbox rules: Example data only, reset any time, currencies never mix in totals, own transfers and pending/failed records are excluded from totals, unclear alerts stay out until completed, no recording until required fields are valid. Native app was not modified in this round. Context7 W3C HTML docs (native button semantics, labels, keyboard activation) guided the controls; research: <a href="fresh-current-research.md">fresh-current-research.md</a>. Prototype: <a href="fresh-current-comparison.html">fresh-current-comparison.html</a> · spec: <a href="fresh-current-design.md">fresh-current-design.md</a>
+  <details class="board"><summary>Technical notes — sandbox rules &amp; links</summary>
+  <p class="px" style="padding-top:.5rem;font-size:.85rem;">Every interaction runs on Example data inside this page — nothing saves, syncs or leaves it. <b>Reset examples</b> at the top restores ledger, review, drafts and filters.</p>
+  <div class="foot" style="margin-top:.5rem;border-top:none;">
+    Sandbox rules: Example data only, reset any time, currencies never mix in totals, own transfers and pending/failed records are excluded from totals, unclear alerts stay out until completed, no recording until required fields are valid. Editing keeps the same record ID, cleared optional fields stay cleared, and amounts are parsed as exact integers in minor units (unsafe or unknown-currency values are rejected). Native app was not modified in this round. Context7 W3C HTML docs (native button semantics, labels, keyboard activation) guided the controls; research: <a href="fresh-current-research.md">fresh-current-research.md</a>. Prototype: <a href="fresh-current-comparison.html">fresh-current-comparison.html</a> · spec: <a href="fresh-current-design.md">fresh-current-design.md</a>
   </div>
+  </details>
 </div>
 
 <script>
@@ -486,9 +535,9 @@ function dayLabel(off){
 
 function seed(){
   entries = [
-    {id:'c', who:'Lunch test', kind:'Expense',      dir:'OUT', cur:'NGN', amtMinor:125050, off:0,  date:'2026-10-26', origin:'Manual',   status:'Completed', note:'Example', account:'Unassigned'},
-    {id:'b', who:'Ada. Ref',   kind:'Unclassified', dir:'OUT', cur:'NGN', amtMinor:850000, off:1,  date:'2026-10-25', origin:'Capture',  status:'Completed', note:'Example', account:'Unassigned'},
-    {id:'a', who:'Bob. Ref',   kind:'Unclassified', dir:'IN',  cur:'NGN', amtMinor:100000, off:24, date:'2026-10-02', origin:'Capture',  status:'Completed', note:'Example', account:'Unassigned'},
+    {id:'c', who:'Lunch',      kind:'Expense',      dir:'OUT', cur:'NGN', amtMinor:125050, off:0,  date:'2026-10-26', origin:'Manual',   status:'Completed', note:'Example', account:'Unassigned'},
+    {id:'b', who:'Ada',        kind:'Unclassified', dir:'OUT', cur:'NGN', amtMinor:850000, off:1,  date:'2026-10-25', origin:'Capture',  status:'Completed', note:'Example', account:'Unassigned'},
+    {id:'a', who:'Bob',        kind:'Unclassified', dir:'IN',  cur:'NGN', amtMinor:100000, off:24, date:'2026-10-02', origin:'Capture',  status:'Completed', note:'Example', account:'Unassigned'},
   ];
   review = [
     {id:'r1', src:'Payment alert · Example', amount:'50.00', cur:'USD', dir:'UNSET', reason:'The alert shows money moving, but not which way it went.', grabbed:'Debit/credit alert, 20:41 — “You sent or received USD 50.00.”'},
@@ -506,11 +555,17 @@ function totalsFor(cur, dirOnly){
 }
 
 /* ————————————— HOME ————————————— */
-const DIR_G_IN  = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0E7A55" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6M6.5 11.5L12 6l5.5 5.5"/></svg>';
-const DIR_G_OUT = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#17171A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6.5 12.5L12 18l5.5-5.5"/></svg>';
 const GFILTERS = [['dir-in','Money in'],['dir-out','Money out'],['cap','Captured'],['man','Manual']];
 
 function el(tag, cls, text){ const n=document.createElement(tag); if(cls)n.className=cls; if(text!=null)n.textContent=text; return n; }
+/* initials for known counterparties; null → bespoke geometric mark (never a guessed category icon) */
+function avatarFor(t){
+  const s = (t||'').trim();
+  if(!s || /^(Alert|Manual|Example)/i.test(s)) return null;
+  const w = s.split(/\s+/).filter(Boolean);
+  return (w.length>1 ? w[0][0]+w[w.length-1][0] : w[0][0]).toUpperCase();
+}
+const GAVATAR = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".55"><path d="M4 14c3.5 0 3.5-6 8-6s4.5 6 8 6"/><circle cx="12" cy="17.5" r="1.4" fill="currentColor" stroke="none"/></svg>';
 function chipBtn(label, selected, onclk){ const b=el('button','chip'+(selected?' sel':''),label); b.setAttribute('aria-pressed',selected); b.onclick=onclk; return b; }
 const PERIOD_DAYS = {'all':Infinity,'7':7,'30':30};
 const PERIOD_LABEL = {'all':'All time','7':'Last 7 days','30':'Last 30 days'};
@@ -534,17 +589,13 @@ function renderHome(){
   const in_  = pool.filter(e=>e.dir==='IN'  && e.kind!=='Transfer' && e.status==='Completed').reduce((s,e)=>s+e.amtMinor,0);
   const out_ = pool.filter(e=>e.dir==='OUT' && e.kind!=='Transfer' && e.status==='Completed').reduce((s,e)=>s+e.amtMinor,0);
   const net = in_ - out_;
-  document.getElementById('netLabel').textContent = net >= 0 ? 'Net received' : 'Net sent';
-  document.getElementById('netAmt').textContent = fmt(Math.abs(net), viewCur);
+  /* one honest net figure — signed, stable, colour only where it is semantic */
+  document.getElementById('netLabel').textContent = 'Recorded net';
+  const netEl = document.getElementById('netAmt');
+  netEl.textContent = (net < 0 ? '−' : '+') + ' ' + fmt(Math.abs(net), viewCur);
+  netEl.style.color = net < 0 ? 'var(--ink)' : 'var(--mint-deep)';
   document.getElementById('inAmt').textContent  = fmt(in_, viewCur);
   document.getElementById('outAmt').textContent = fmt(out_, viewCur);
-
-  // scope label: concise status line; the full explanation lives in the info details
-  const parts = ['Completed only · transfers excluded'];
-  const narrowed = filt.dir || filt.src || filt.q.trim();
-  if(narrowed) parts.push('filtered view');
-  document.getElementById('scopeNote').textContent = PERIOD_LABEL[filt.period] + ' · ' + viewCur + ' · ' + parts.join(' · ');
-  document.getElementById('periodLabel').textContent = 'Recorded activity · ' + viewCur;
 
   // currency selector for view (compact native select)
   const selCur = document.getElementById('viewCurSel');
@@ -576,15 +627,21 @@ function renderHome(){
   sorted.forEach(e=>{
     if(e.off!==lastDay){ lastDay=e.off; rowsEl.appendChild(el('div','dh',dayLabel(e.off))); }
     const row = el('button','trow');
-    const dg = el('span','dot-g'+(e.dir==='IN'?'':' out'), null); dg.innerHTML = e.dir==='IN'?DIR_G_IN:DIR_G_OUT;
+    const dg = el('span','av'+(e.dir==='IN'?' in':''), null);
+    const ini = avatarFor(e.who);
+    if(ini) dg.textContent = ini; else dg.innerHTML = GAVATAR;
     const lw = el('span','leadwrap');
     const lead = el('span','lead',e.who||'Example entry');
     const acc = e.account ? e.account.trim() : '';
-    const sub = el('span','sub', e.origin + (acc && acc.toLowerCase()!=='unassigned' ? ' · '+acc : ''));
-    if(e.kind==='Unclassified'){ const u=el('span','uncla','not classified'); sub.appendChild(u); }
+    const subParts = [];
+    if(acc && !/^unassigned$/i.test(acc)) subParts.push(acc);           // origin hidden on normal rows — it stays in the detail sheet
+    if(e.note && !/^Example/.test(e.note) && !/^Recorded from Review/.test(e.note)) subParts.push(e.note);
+    if(e.kind==='Unclassified') subParts.push('Unclassified');          // quiet semantic text, not a pill
+    const sub = el('span','sub', subParts.join(' · '));
     const amtr = el('span','amtr');
     const amt = el('span','amt', fmt(e.amtMinor,e.cur));
-    const dirw = el('span','amtdir', e.dir==='IN'?'In':'Out');
+    const dirw = el('span','amtdir'+(e.dir==='IN'?' in':''), null);     // clear In/Out cue beside the full amount
+    dirw.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">'+(e.dir==='IN'?'<path d="M12 19V6M6.5 11.5L12 6l5.5 5.5"/>':'<path d="M12 5v13M6.5 12.5L12 18l5.5-5.5"/>')+'</svg>'+(e.dir==='IN'?'In':'Out');
     amtr.appendChild(amt); amtr.appendChild(dirw);
     lw.appendChild(lead); lw.appendChild(sub);
     row.appendChild(dg); row.appendChild(lw); row.appendChild(amtr);
@@ -605,30 +662,55 @@ function renderHome(){
 
 /* ————————————— REVIEW ————————————— */
 function renderReview(){
-  el('div',''); const list=document.getElementById('rvList'); list.textContent='';
+  const list=document.getElementById('rvList'); list.textContent='';
   review.forEach(r=>{
-    const c=el('div','rvcard');
     const needAmt = r.amount==null;
     const needCur = !r.cur || r.cur==='?';
     const needDir = r.dir==='UNSET';
-    const need = needAmt?' an amount':(needCur?' a currency':'')+((needCur||needAmt||needDir)?'':' direction');
-    const tagTxt = needAmt||needCur||needDir ? ('Needs'+(needAmt?' a readable amount':needCur?' a currency':' a direction')) : 'Ready to record';
-    const tag = el('span','rvt'); tag.textContent = tagTxt;
-    const amt = el('div','rvamt', needAmt ? 'Amount unreadable' : fmt(toMinor(String(r.amount)) ?? 0, r.cur));
-    const reason = el('div','rvreason', r.reason);
+    const done = !needAmt && !needCur && !needDir;
+    const c=el('div','rvcard');
+    c.appendChild(el('span','rvt', done?'Ready to record':needAmt?'Needs a readable amount':needCur?'Needs a currency':'Needs a direction'));
+    if(needAmt){
+      c.appendChild(el('div','rvamt','Amount unreadable'+(r.cur && r.cur!=='?' ? ' ('+r.cur+')' : '')));
+      const miss=el('button','linkbtn','Enter amount');
+      miss.style.display='flex';
+      miss.onclick=()=>openReviewEdit(r.id);
+      c.appendChild(miss);
+    } else {
+      // the full amount leads the card — nothing hidden behind «…»
+      c.appendChild(el('div','rvamt', fmt(toMinor(String(r.amount)) ?? 0, r.cur)));
+    }
+    // when the only missing fact is the direction, the question below already says it — don't repeat it as a paragraph
+    if(!(needAmt===false && needCur===false && needDir)) c.appendChild(el('div','rvreason', r.reason));
+    // one concrete question with direct choices — picking them only records the fact, never the entry
+    if(!needAmt && !needCur && needDir){
+      c.appendChild(el('div','rvq','Did this come in or go out?'));
+      const io=el('div','ioq');
+      [['IN','In'],['OUT','Out']].forEach(([d,l])=>{
+        const b=el('button', r.dir===d ? 'sel-'+(d==='IN'?'in':'out') : '', l);
+        b.setAttribute('aria-pressed', r.dir===d);
+        b.onclick=()=>{ r.dir=d; renderReview(); };
+        io.appendChild(b);
+      });
+      c.appendChild(io);
+    }
     const det = el('details'); const sum = el('summary',''); sum.textContent='Show the original alert';
     const grab = el('div','grab', r.src+' — '+r.grabbed);
     det.appendChild(sum); det.appendChild(grab);
+    c.appendChild(det);
     const act = el('div','rvact');
-    const bEdit = el('button','btn mint','Edit'); bEdit.onclick=()=>openReviewEdit(r.id);
-    const bRec = el('button','btn quiet','Record'); bRec.style.color='var(--mint-deep)'; bRec.style.borderColor='var(--mint-soft)';
-    const resolvable = !needAmt && !needCur && r.dir!=='UNSET';
-    if(!resolvable) bRec.disabled = true, bRec.title='Complete the missing fields first';
-    bRec.onclick=()=>resolveReview(r.id);
+    if(done){
+      const bRec = el('button','btn mint','Record');
+      bRec.style.flex='1';
+      bRec.onclick=()=>resolveReview(r.id);
+      act.appendChild(bRec);
+      const bEdit = el('button','btn quiet','Edit'); bEdit.onclick=()=>openReviewEdit(r.id);
+      act.appendChild(bEdit);
+    }
     const bIgn = el('button','btn quiet','Ignore'); bIgn.onclick=()=>ignoreReview(r.id);
-    act.appendChild(bEdit); act.appendChild(bRec); act.appendChild(bIgn);
-    if(needCur && r.dir!=='UNSET'){ const w=el('div','rvnote warn','Pick the currency to record it. Different currencies are kept separate, never summed.'); c.appendChild(w); }
-    c.appendChild(tag); c.appendChild(amt); c.appendChild(reason); c.appendChild(det); c.appendChild(act);
+    if(!done) bIgn.style.marginLeft='auto';
+    act.appendChild(bIgn);
+    c.appendChild(act);
     list.appendChild(c);
   });
   document.getElementById('rvEmpty').hidden = review.length>0;
@@ -755,12 +837,19 @@ function setDir(d){
 }
 function buildKeypad(){
   const kp=document.getElementById('kpad');
-  ['1','2','3','4','5','6','7','8','9','.','0','⌫'].forEach(k=>{
+  ['1','2','3','4','5','6','7','8','9','.','0','bs'].forEach(k=>{
     const b=document.createElement('button');
-    b.textContent = k==='⌫' ? '⌫' : k;
-    b.setAttribute('aria-label', k==='⌫' ? 'Clear last digit' : (k==='.' ? 'Decimal point' : 'Digit '+k));
+    if(k==='bs'){
+      b.classList.add('kbx');
+      b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5.5h10A1.5 1.5 0 0 1 20.5 7v10a1.5 1.5 0 0 1-1.5 1.5H9L3.5 12z"/><path d="M11.5 9.5l4.5 4.5M16 9.5L11.5 14"/></svg>';
+      b.setAttribute('aria-label','Clear last digit');
+    } else {
+      b.textContent=k;
+      b.setAttribute('aria-label', k==='.' ? 'Decimal point' : 'Digit '+k);
+    }
+    const key = k==='bs' ? '⌫' : k;
     b.onclick=()=>{
-      if(k==='⌫'){ addAmt=addAmt.slice(0,-1).replace(/\.$/,''); }
+      if(k==='bs'){ addAmt=addAmt.slice(0,-1).replace(/\.$/,''); }
       else if(k==='.'){ if(!addAmt.includes('.')) addAmt=(addAmt||'0')+'.'; }
       else { const f=addAmt.split('.')[1]; if(f===undefined) addAmt=(addAmt==='0'?k:addAmt+k); else if(f.length<2) addAmt+=k; }
       document.getElementById('saveErr').hidden=true;
@@ -848,16 +937,18 @@ function deleteRow(id){
   toastSay('Deleted (sandbox). Reset restores the examples.');
 }
 let sheetPrevFocus=null;
+function phoneToTop(){ const p=document.getElementById('phone'); if(p) p.scrollTop=0; }
 function openSheet(){
   const s=document.getElementById('sheet');
   sheetPrevFocus=document.activeElement;
-  s.classList.add('on'); document.getElementById('scrim').classList.add('on');
-  const f=s.querySelector('button,input'); if(f) f.focus();
+  s.classList.add('on'); s.scrollTop=0; document.getElementById('scrim').classList.add('on'); phoneToTop();
+  const f=s.querySelector('button,input'); if(f) f.focus({preventScroll:true});
 }
 function closeSheet(){
   document.getElementById('sheet').classList.remove('on');
   document.getElementById('scrim').classList.remove('on');
-  if(sheetPrevFocus && sheetPrevFocus.focus) sheetPrevFocus.focus();
+  phoneToTop();
+  if(sheetPrevFocus && sheetPrevFocus.focus) sheetPrevFocus.focus({preventScroll:true});
   sheetPrevFocus=null;
 }
 document.addEventListener('keydown', ev=>{
@@ -888,7 +979,14 @@ function show(s){
     const nb=document.getElementById('n-'+k); if(nb) nb.classList.toggle('on', k===s);
   });
   document.getElementById('phone').classList.toggle('addmode', s==='add'); // hide bottom nav on Add (explicit Cancel instead)
+  phoneToTop(); // route change must never leave the phone frame internally scrolled
   if(s==='add' && !editingId) {} // drafts only reset via openAdd/save/edit, not tab switches
+  // one short stagger, on a real tab switch only (never on filter re-renders)
+  if(s==='home' && !document.documentElement.classList.contains('rm') && !window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+    const rows=document.querySelectorAll('#s-home .trow');
+    rows.forEach((r,i)=>{ if(i<5){ r.classList.remove('sw'); void r.offsetWidth; r.style.animationDelay=(i*30)+'ms'; r.classList.add('sw'); } });
+    setTimeout(()=>{ document.querySelectorAll('#s-home .trow').forEach(r=>{ r.classList.remove('sw'); r.style.animationDelay=''; }); }, 340);
+  }
 }
 document.getElementById('n-home')&&void 0;
 const rmBtn=document.getElementById('rmBtn');
@@ -897,10 +995,14 @@ rmBtn.onclick=()=>{
   rmBtn.setAttribute('aria-pressed', on);
   rmBtn.textContent='Reduced motion: '+(on?'on':'off');
 };
-document.getElementById('resetAll').onclick=()=>{
-  seed(); renderAll(); show('home');
+// used by resetAll: clear focus/sheet state without restoring focus to stale nodes
+function closeSheetQuietly(){ const s=document.getElementById('sheet'); if(s.classList.contains('on')) closeSheet(); sheetPrevFocus=null; phoneToTop(); }
+/* public: restores every seeded example, draft, filter and review change */
+function resetAll(){
+  seed(); closeSheetQuietly(); renderAll(); show('home');
   toastSay('Examples restored — ledger, review, drafts and filters are back to the seeded state.');
-};
+}
+document.getElementById('resetAll').onclick=resetAll;
 
 /* one render pass for every destination — kept before init */
 function renderAll(){ renderHome(); renderReview(); renderAdd(); }
