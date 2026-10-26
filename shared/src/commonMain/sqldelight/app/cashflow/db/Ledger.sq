@@ -1,0 +1,49 @@
+CREATE TABLE ledger_entry (
+  id TEXT NOT NULL PRIMARY KEY,
+  payload TEXT NOT NULL
+);
+
+CREATE TABLE captured_event (
+  id TEXT NOT NULL PRIMARY KEY,
+  source TEXT NOT NULL,
+  body TEXT NOT NULL,
+  captured_at TEXT NOT NULL,
+  entry_id TEXT,
+  review_payload TEXT,
+  ignored INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX captured_entry_idx ON captured_event(entry_id);
+
+CREATE TABLE preference (
+  key TEXT NOT NULL PRIMARY KEY,
+  value TEXT NOT NULL
+);
+
+allEntries:
+SELECT * FROM ledger_entry;
+
+putEntry:
+INSERT OR REPLACE INTO ledger_entry(id, payload) VALUES (?, ?);
+
+allEvents:
+SELECT * FROM captured_event ORDER BY captured_at DESC;
+
+findEvent:
+SELECT * FROM captured_event WHERE id = ?;
+
+putEvent:
+INSERT INTO captured_event(id, source, body, captured_at, entry_id, review_payload, ignored)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+resolveEvent:
+UPDATE captured_event SET entry_id = ?, review_payload = NULL, ignored = ? WHERE id = ?;
+
+allPreferences:
+SELECT * FROM preference;
+
+putPreference:
+INSERT OR REPLACE INTO preference(key, value) VALUES (?, ?);
+
+expireRawText:
+UPDATE captured_event SET body = '' WHERE captured_at < ? AND review_payload IS NULL;

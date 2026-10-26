@@ -1,0 +1,21 @@
+.gradle/
+.kotlin/
+**/build/
+local.properties
+*.xcuserstate
+xcuserdata/
+.DS_Store
+
+# Local credentials, signing material, and packaged binaries
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+*.p12
+*.pem
+*keystore*.properties
+key.properties
+*.apk
+*.aab
+*.ipa
