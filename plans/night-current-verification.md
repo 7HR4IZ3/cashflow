@@ -15,3 +15,17 @@
 - Incoming/outgoing arrows are consistent across summary, feed, Review, and Add; Review item navigation uses separate left/right chevrons. These icon distinctions and the new Settings help disclosure were visually inspected.
 
 The previous white/mint prototype remains available for comparison. The user requested a new direction and icon-only navigation; this charcoal/citron concept is a proposal. No Compose, native, or ledger source changed, so no native builds were run for this pass.
+
+## First-use fixes verification
+
+2026-10-26. Checked the saved HTML after the interrupted implementation was resumed.
+
+- Ran 19 browser regression assertions covering seed totals, isolated sample launch, cancel-edit-then-add, currency inheritance, new and edited record identity, cleared optional fields, View record actions, delete/ignore restoration without duplication, combined filters, matched-total wording, USD separation, precision/overflow rejection, blank edited amounts, unknown currency, reset, and horizontal overflow. All passed.
+- Walked manual entry and editing through browser controls, including account/note in the details sheet. The edit heading named the existing record, and saving kept its ID. Home returned with window scroll at zero.
+- Checked Add at 360×844 and 390×844. Save remained visible below the keypad, and the page had no horizontal overflow. This desktop browser test does not verify an actual mobile software keyboard.
+- Entered `12.345` in Review: Record stayed disabled with a visible precision explanation. Correcting it to `12.34` and choosing a direction cleared the message and enabled Record.
+- Ignored a partly edited alert, then restored it through Settings recovery. Its amount draft and direction survived. Repeated restoration did not duplicate it.
+- Opened the sample from the intro button, recorded its clear example, edited NGN 2,000.00 to NGN 2,100.00, and exercised Undo. Compared the ledger, Review queue, currency, filters, and dirty state with the baseline; they stayed unchanged. The demo editor is inside a scrollable sheet.
+- Rechecked the missing sample entrypoint found during runtime testing. The public button now opens the demo. No browser console errors remained in the verified flow.
+
+Capture setup is explanatory only. Browser source choices grant no permissions, and actual Android/iPhone capture was not tested in this pass. Recovery is in-memory and resets on page reload or Reset examples; it is not native persistence.

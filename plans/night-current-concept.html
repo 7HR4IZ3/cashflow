@@ -43,8 +43,11 @@
   .ph-status{display:flex;justify-content:space-between;align-items:center;padding:10px 18px 0;font-size:.7rem;font-weight:600;color:#A0A7A6;letter-spacing:.04em;}
   .ph-status .mono{display:inline-flex;align-items:center;gap:.4em;}
   .ph-status .ex{color:#A0A7A6;}
-  .ph-body{min-height:660px;}
-  .screen{display:none;padding:2px 0 128px;animation:sfade .18s var(--ease);}
+  /* H: screens scroll inside the phone frame — the outer window never has to scroll mid-entry */
+  .ph-body{height:672px;overflow:hidden;}
+  .screen{display:none;height:100%;overflow-y:auto;overflow-x:hidden;box-sizing:border-box;padding:2px 0 138px;animation:sfade .18s var(--ease);}
+  .phone.intromode .dock{display:none;}
+  .webl{border:none;background:transparent;color:#A0A7A6;font:inherit;font-size:.85rem;font-weight:600;min-height:44px;padding:0 .8em;cursor:pointer;text-decoration:underline;text-underline-offset:3px;}
   .screen.on{display:block;}
   @keyframes sfade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
   :root{--ease:cubic-bezier(.22,.9,.3,1);}
@@ -159,6 +162,8 @@
   .rvbar{display:flex;align-items:center;justify-content:space-between;}
   .rvbar .prog{font-variant-numeric:tabular-nums;font-weight:700;font-size:.86rem;color:#A0A7A6;letter-spacing:.06em;}
   .rvstage{background:#1A1D1E;border-radius:22px;margin:10px 16px 0;padding:18px 18px 16px;}
+  .inrow{display:flex;gap:.6rem;align-items:flex-start;padding:4px 0;font-size:.88rem;line-height:1.45;}
+  .inrow .ig{flex:0 0 auto;width:17px;height:17px;margin-top:2px;}
   .rvsrc{display:inline-flex;align-items:center;gap:.4em;font-size:.78rem;font-weight:600;color:#A0A7A6;}
   .rvamt{font-size:2.1rem;font-weight:750;letter-spacing:-.03em;font-variant-numeric:tabular-nums;margin:.45rem 0 .05rem;}
   .rvamt.miss{color:#B7A9E8;}
@@ -199,6 +204,8 @@
   /* —————————————— add: full-screen calculator —————————————— */
   .addhead{display:flex;align-items:center;justify-content:space-between;padding:10px 16px 4px;}
   .addhead .ent{font-size:.74rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#A0A7A6;}
+  .addhead #addCtx{margin-left:.7rem;color:#A0A7A6;text-transform:none;letter-spacing:0;font-weight:600;font-size:.8rem;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;padding-right:.3rem;}
+  .addhead #addTitle{flex:0 0 auto;}
   .amtstage{padding:8px 16px 2px;text-align:left;}
   .amt-big{font-size:3.4rem;font-weight:750;letter-spacing:-.04em;font-variant-numeric:tabular-nums;min-height:1.25em;color:#F5F4EE;}
   .amt-big.dim{color:#3C4346;}
@@ -234,7 +241,10 @@
   .toast{position:absolute;left:14px;right:14px;bottom:150px;background:#E1F58C;color:#1B2405;border-radius:16px;padding:11px 14px;
     font-size:.85rem;font-weight:600;line-height:1.4;opacity:0;transform:translateY(8px);transition:opacity .22s,transform .22s var(--ease);
     pointer-events:none;box-shadow:0 12px 28px -12px rgba(0,0,0,.6);}
-  .toast.on{opacity:1;transform:none;}
+  .toast.on{opacity:1;transform:none;pointer-events:auto;}
+  .toastact{border:1.5px solid rgba(27,36,5,.45);background:transparent;color:#1B2405;font:inherit;font-size:.8rem;font-weight:750;
+    min-height:32px;padding:.25em .85em;border-radius:10px;margin-left:10px;cursor:pointer;flex:0 0 auto;}
+  .toastact:active{transform:scale(.96);}
   .setnote{font-size:.9rem;color:#A0A7A6;line-height:1.55;margin:.3rem 0 .6rem;}
 
   /* reduced motion: manual toggle + system preference */
@@ -282,6 +292,28 @@
     <div class="ph-status"><span class="mono">9:41</span><span class="ex">Example data · sandbox — nothing leaves this page</span></div>
 
     <div class="ph-body">
+      <!-- INTRO · skippable first-run walkthrough (replayable from Settings); example-only, isolated from data -->
+      <div class="screen" id="s-intro" role="tabpanel" aria-label="Welcome to Cashflow">
+        <div class="ph-head"><span class="appmono" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 14c3.5 0 3.5-6 8-6s4.5 6 8 6" stroke="#E1F58C" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="17.5" r="1.6" fill="#E1F58C"/></svg></span><span class="spacer"></span></div>
+        <h2 style="margin:.2rem 16px .3rem;font-size:1.35rem;letter-spacing:-.02em;">A money diary</h2>
+        <p class="setnote" style="margin:0 16px 12px;">Payment alerts become a money diary. The In / Out / Net numbers track what <b>you</b> record here — they are <b>not a bank balance</b>. Example data only.</p>
+        <div class="rvstage" style="margin-top:0;">
+          <div class="inrow"><span class="ig" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l5 5L19.5 7"/></svg></span><span>A clear alert records straight away — amount, direction, done.</span></div>
+          <div class="inrow"><span class="ig" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18v6a6 6 0 01-6 6H9a6 6 0 01-6-6z"/><path d="M7 12h2M13 12h2"/></svg></span><span>An unclear alert waits in <b>Review</b> — the tray icon, with a count badge.</span></div>
+          <div class="inrow"><span class="ig" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L20 8l-4-4L4 16z"/></svg></span><span>Any entry can be edited, deleted, and undone right after.</span></div>
+        </div>
+        <p class="setnote" style="margin:14px 16px 8px;">See it on a sample alert — the demo is fully isolated and never touches the example ledger.</p>
+        <div style="margin:0 16px;display:grid;gap:8px;">
+          <button class="btn ghost block" aria-label="Try a sample alert — isolated demo; remainder of ledger untouched" onclick="sampleAlertTest()">Try a sample alert</button>
+          <button class="btn citron block" onclick="finishIntro('home')">Start on Home</button>
+          <button class="btn ghost block" aria-label="Use manual entry — skips capture setup" onclick="finishIntro('add')">Use manual entry</button>
+          <div style="display:flex;justify-content:space-between;">
+            <button class="webl" onclick="captureSetup()">Capture setup guide</button>
+            <button class="webl" onclick="finishIntro('home')">Skip intro</button>
+          </div>
+        </div>
+      </div>
+
       <!-- HOME -->
       <div class="screen on" id="s-home" role="tabpanel" aria-label="Home">
         <div class="ph-head">
@@ -351,6 +383,7 @@
       <div class="screen" id="s-add" role="tabpanel" aria-label="Add record">
         <div class="addhead">
           <span class="ent" id="addTitle">Add record</span>
+          <span class="ent" id="addCtx" hidden></span>
           <button class="ictl" id="addCancel" aria-label="Cancel" title="Cancel" onclick="backFromAdd()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
           </button>
@@ -375,22 +408,13 @@
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg>
           </button>
         </div>
-        <div class="fieldlines" id="moreFields">
-          <div>
-            <div class="infield"><label class="fld" for="kindSel">Kind</label>
-              <select class="minisel" id="kindSel" style="width:100%;margin-top:4px;" aria-label="Kind" onchange="setKind(this.value)"></select>
-            </div>
-          </div>
-          <div>
-            <div class="infield"><label class="fld" for="statSel">Status</label>
-              <select class="minisel" id="statSel" style="width:100%;margin-top:4px;" aria-label="Status" onchange="setStat(this.value)"></select>
-            </div>
-          </div>
-          <div class="infield"><label for="fWho">Who (optional)</label><input id="fWho" placeholder="e.g. Chidi"></div>
-          <div class="infield"><label for="fAcc">Account (optional)</label><input id="fAcc" placeholder="Unassigned"></div>
-          <div class="infield"><label for="fNote">Note (optional)</label><input id="fNote" placeholder="Add a note"></div>
-          <div class="infield"><label for="fDate">Date</label><input id="fDate" type="date" value="2026-10-26"></div>
+        <!-- B: the optional name lives on the primary entry — never buried after kind/status -->
+        <div class="infield" id="whoWrap" style="margin:0 16px 8px;">
+          <label for="fWho">What was it for? <span style="color:#5E666B;font-weight:600;">(optional)</span></label>
+          <input id="fWho" placeholder="e.g. Lunch" aria-describedby="whoHint">
+          <span class="setnote" id="whoHint" style="display:none;" aria-hidden="true"></span>
         </div>
+        <!-- B: advanced detail is its own sheet — it must never push the keypad between user and Save -->
         <div class="keypad" id="kpad"></div>
         <div class="err" id="saveErr" hidden></div>
         <div class="saveline">
@@ -417,8 +441,25 @@
       </div>
     </div>
 
+    <!-- sheets host the advanced add-fields only while "More details" is open (they live here, then return to the Add screen) -->
     <div class="scrim" id="scrim" onclick="closeSheet()"></div>
-    <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Detail"></div>
+    <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Detail">
+      <div class="fieldlines" id="moreFields">
+        <div>
+          <div class="infield"><label class="fld" for="kindSel">Kind</label>
+            <select class="minisel" id="kindSel" style="width:100%;margin-top:4px;" aria-label="Kind" onchange="setKind(this.value)"></select>
+          </div>
+        </div>
+        <div>
+          <div class="infield"><label class="fld" for="statSel">Status</label>
+            <select class="minisel" id="statSel" style="width:100%;margin-top:4px;" aria-label="Status" onchange="setStat(this.value)"></select>
+          </div>
+        </div>
+        <div class="infield"><label for="fAcc">Account (optional)</label><input id="fAcc" placeholder="Unassigned"></div>
+        <div class="infield"><label for="fNote">Note (optional)</label><input id="fNote" placeholder="Add a note"></div>
+        <div class="infield"><label for="fDate">Date</label><input id="fDate" type="date" value="2026-10-26"></div>
+      </div>
+    </div>
     <div class="toast" id="toast" role="status"></div>
   </div>
 
@@ -472,6 +513,14 @@ const ANCHOR = '2026-10-26';
 let entries = [], review = [], editingId = null, dirty=false, rIdx=0, rvEdit=false;
 let filt = {period:'all', q:'', dir:null, src:null};
 let viewCur = 'NGN';
+/* A: first-run walkthrough state — replays only from Settings, never nags on other actions */
+let introDone = false;
+/* G: memory-only recovery archives — deleted records / ignored alerts, restorable until Reset */
+let deletedArchive = [], ignoredArchive = [];
+let lastRecordId = null; /* D: CTA target for the newest recorded item */
+let lastDeletedId = null; /* G: undo target for the current delete operation */
+let addMoreOpen = false; /* B: advanced-fields sheet tracking */
+const moreFieldsEl = document.getElementById('moreFields'); /* survives sheet rebuilds */
 
 /* money: integer minor units, strict 2-decimal input — unchanged from proven sandbox */
 const dp = /^\d+(\.\d{1,2})?$/;
@@ -481,6 +530,14 @@ function toMinor(str){
   const i = s.indexOf('.'), w = i<0 ? s : s.slice(0,i), f = i<0 ? '0' : s.slice(i+1);
   const minor = parseInt(w,10)*100 + parseInt((f+'0').slice(0,2),10);
   return Number.isSafeInteger(minor) && minor >= 0 ? minor : null;
+}
+/* strict money input: digits only, optional thousands commas ONLY in full 3-digit groups,
+   optional .dd — never strips commas where that would silently change the value ("1,5" is invalid,
+   "1,000" = 100000 minor, "50.00" = 5000) */const AMT_STRICT = /^\d{1,3}(,\d{3})*(\.\d{1,2})?$|^\d+(\.\d{1,2})?$/;
+function strictMinor(raw){
+  const s = String(raw).trim();
+  if(!AMT_STRICT.test(s)) return null;
+  return toMinor(s.replace(/,/g,''));
 }
 function fmt(minor, cur){
   const whole = Math.floor(minor/100), part = String(minor%100).padStart(2,'0');
@@ -536,6 +593,7 @@ const SVG = {
   pencil:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L20 8l-4-4L4 16z"/></svg>',
   check:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l5 5L19.5 7"/></svg>',
   x:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  undo:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10a8 8 0 0113.7-5.7L20 6.5"/><path d="M20 3v3.5h-3.5"/></svg>',
   minus:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg>',
   receipt:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-2.5-1.5L13 21l-2.5-1.5L8 21l-2-1.5z"/><path d="M9.5 8h5M9.5 12h5"/></svg>',
   geopattern:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 14c3.5 0 3.5-6 8-6s4.5 6 8 6"/><circle cx="12" cy="17.5" r="1.5" fill="currentColor" stroke="none"/></svg>'
@@ -613,7 +671,9 @@ function renderHome(){
   const netAbs = Math.abs(net); // sign carried separately — fmt assumes nonnegative
   nv.textContent = (net<0?MINUS+' ':'')+fmt(netAbs, viewCur);
   nv.classList.toggle('pos', net>=0);
-  document.querySelector('.iotrail .net').textContent = 'Net';
+  // E: when search or filters narrow the pool, say so — this net is not the overall net
+  document.querySelector('.iotrail .net').textContent =
+    (filt.dir||filt.src||filt.q.trim()) ? 'Matched net' : 'Recorded net';
 
   const selCur = document.getElementById('viewCurSel');
   if(!selCur.options.length) CURRENCIES.forEach(c=>selCur.appendChild(curOption(c)));
@@ -622,13 +682,16 @@ function renderHome(){
   document.getElementById('periodSel').value = filt.period;
 
   // filter chips only inside the reveal
+  // E: internal values map to labels (data origin "Capture" ⇄ chip "Captured");
+  // families combine — direction and source are exclusive only within their own family
   const fc = document.getElementById('fwrap'); fc.textContent='';
-  [['in','Money in','IN'],['out','Money out','OUT'],['cap','Captured',null],['man','Manual',null]].forEach(([key,label,val])=>{
-    const b = el('button','fchip'+((val?filt.dir===val:filt.src===label)?' sel':''), label);
-    b.setAttribute('aria-pressed', String(!!(val?filt.dir===val:filt.src===label)));
+  [['in','Money in','IN',true],['out','Money out','OUT',true],['cap','Captured','Capture',false],['man','Manual','Manual',false]].forEach(([key,label,val,isDir])=>{
+    const on = isDir ? filt.dir===val : filt.src===val;
+    const b = el('button','fchip'+(on?' sel':''), label);
+    b.setAttribute('aria-pressed', String(on));
     b.onclick=()=>{
-      if(val){ filt.dir = (filt.dir===val)?null:val; filt.src=null; }
-      else { filt.src = (filt.src===label)?null:label; filt.dir=null; }
+      if(isDir){ filt.dir = (filt.dir===val)?null:val; }
+      else { filt.src = (filt.src===val)?null:val; }
       renderHome();
     };
     fc.appendChild(b);
@@ -720,7 +783,10 @@ function renderReview(){
     const lab=el('label',null,'Amount'); lab.htmlFor='rvAmt';
     const inp=document.createElement('input'); inp.id='rvAmt'; inp.type='text'; inp.inputMode='decimal'; inp.placeholder='e.g. 25.00';
     if(r.draftAmt) inp.value=r.draftAmt; else if(r.amount!=null) inp.value=r.amount;
-    inp.oninput=()=>{ r.draftAmt=inp.value; updRec(); };
+    // F: the reason the Record check is disabled is written under it — never a mystery-disabled button
+    const msg=el('div','erv'); msg.id='rvAmtMsg'; msg.setAttribute('role','status'); msg.setAttribute('aria-live','polite');
+    inp.setAttribute('aria-describedby','rvAmtMsg');
+    inp.oninput=()=>{ r.draftAmt=inp.value; validate(); };
     f.appendChild(lab); f.appendChild(inp); st.appendChild(f);
     // currency row — explicit Unknown, stays unknown until the user picks; closed state is glyph-only
     const curSel=document.createElement('select');
@@ -729,16 +795,21 @@ function renderReview(){
     CURRENCIES.forEach(c=>curSel.appendChild(curOption(c)));
     curSel.value = r.cur && CURRENCIES.includes(r.cur) ? r.cur : '?';
     const curW=glyphWrap(curSel, true); const curOv=curW.ov;
-    curSel.onchange=()=>{ r.cur=curSel.value==='?' ? '?' : curSel.value; r.draftCur=curSel.value; setCurGlyph(curOv, curSel.value); updRec(); };
+    curSel.onchange=()=>{ r.cur=curSel.value==='?' ? '?' : curSel.value; r.draftCur=curSel.value; setCurGlyph(curOv, curSel.value); validate(); };
     const cd=el('div',null); cd.style.display='flex'; cd.style.gap='8px';
     const dirSeg=el('div','seg'); dirSeg.style.flex='1';
+    const dirBtns={};
     [['IN'],['OUT']].forEach(([d])=>{
       const b=el('button',null); b.style.display='grid'; b.style.placeItems='center';
       b.setAttribute('aria-label','Money '+(d==='IN'?'in':'out'));
       b.title='Money '+(d==='IN'?'in':'out');
       b.setAttribute('aria-pressed', String(r.dir===d));
       b.innerHTML=dirIco(d)+'<span class="tinylab">'+(d==='IN'?'In':'Out')+'</span>';
-      b.onclick=()=>{ r.dir=d; r.draftDir=d; renderReview(); };
+      dirBtns[d]=b;
+      // F: picking a direction updates in place — no re-render that would steal focus from the amount
+      b.onclick=()=>{ if(r.dir===d) return; r.dir=d;
+        ['IN','OUT'].forEach(k=>dirBtns[k].setAttribute('aria-pressed', String(k===d)));
+        validate(); };
       dirSeg.appendChild(b);
     });
     cd.appendChild(dirSeg); cd.appendChild(curW.wrap);
@@ -747,15 +818,39 @@ function renderReview(){
     const rb=el('button','btn citron',null);
     rb.setAttribute('aria-label','Record this entry'); rb.title='Record';
     rb.innerHTML=SVG.check;
-    const updRec=()=>{
-      const raw=(document.getElementById('rvAmt')||{}).value||r.draftAmt||'';
-      const effCur=r.draftCur||((r.cur&&CURRENCIES.includes(r.cur))?r.cur:null);
-      const m=toMinor(String(raw).replace(/,/g,'').replace(',', '.'));
-      rb.disabled=!(r.dir!=='UNSET' && effCur && m!==null && m>0);
+    // F: distinct, calm reasons — unpicked currency, amount form, zero and direction each explain themselves
+    const explain=(raw, effCur, m)=>{
+      if(!effCur) return 'Pick a currency \u2014 it stays unknown until you choose one.';
+      if(!raw.trim()) return 'Type the amount from the alert.';
+      if(m===null) return 'Use up to 2 decimal places \u2014 digits only.';
+      if(m===0) return 'Enter an amount above zero.';
+      if(r.dir!=='IN' && r.dir!=='OUT') return 'Pick a direction \u2014 did the money come in or go out?';
+      return '';
+    };
+    const validCur=c=>!!c && CURRENCIES.includes(c);
+    const validate=()=>{
+      const raw=(document.getElementById('rvAmt')||{value:r.draftAmt||''}).value||'';
+      // an unknown selection ('?') is NOT a valid currency — only a real CURRENCIES member counts,
+      // whether freshly drafted or carried from the alert itself
+      const effCur = validCur(r.draftCur) ? r.draftCur : (validCur(r.cur) ? r.cur : null);
+      const m=strictMinor(raw); // strict: no comma-stripping; "1,5" never becomes 15
+      const text=explain(raw, effCur, m);
+      msg.textContent=text;
+      rb.disabled = !!text;
     };
     rb.onclick=()=>saveReviewAmount(r);
-    st.appendChild(rb); updRec();
+    st.appendChild(rb);
+    // F: an obvious, gentle way out — never a dead end, and it doesn't discard anything
+    const ns=el('button','webl','Not sure? Leave it for now');
+    ns.setAttribute('aria-label','Not sure — leave this alert in the tray for later');
+    ns.onclick=()=>{
+      if(rIdx<review.length-1){ rIdx++; rvEdit=false; renderReview(); }
+      else { show('home'); toastSay('Left in the tray — Review when you\u2019re ready.'); }
+    };
+    st.appendChild(ns);
+    st.appendChild(msg);
     stage.appendChild(st);
+    validate();
   } else {
     stage.appendChild(el('div','rvamt',fmt(toMinor(String(r.amount)) ?? 0, r.cur)+(needCur?' ?':'')));
     if(needCur){
@@ -815,32 +910,51 @@ function renderReview(){
   if(nav.children.length) flow.appendChild(nav);
 }
 function saveReviewAmount(r){
-  const raw=(document.getElementById('rvAmt')||{}).value||r.draftAmt||'';
-  const minor=toMinor(String(raw).replace(/,/g,'').replace(',', '.'));
+  // the live field is the source of truth — an amount cleared in the editor stays cleared;
+  // it must never silently fall back to the alert's old amount
+  const inp=document.getElementById('rvAmt');
+  const raw=(inp && inp.value!=null ? inp.value : (r.draftAmt||''));
+  const minor=strictMinor(raw);
   if(minor===null||minor<=0){ toastSay('That amount isn\u2019t valid — digits only, up to 2 decimals.'); return; }
-  r.amount=raw.trim(); r.cur=r.draftCur||r.cur||'?'; // never silently default the currency
-  if(r.dir==='UNSET'){ r.dir=r.draftDir||'UNSET'; }
+  const effCur=(r.draftCur && CURRENCIES.includes(r.draftCur)) ? r.draftCur
+             : ((r.cur && CURRENCIES.includes(r.cur)) ? r.cur : null);
+  if(!effCur){ toastSay('Pick a currency before recording — unknown stays unknown.'); return; }
+  r.amount=raw.trim(); r.cur=effCur; // never silently default the currency
+  if(r.dir!=='IN' && r.dir!=='OUT'){ r.dir='UNSET'; } // direction must be In/Out before recording
   rvEdit=false;
   if(resolveReview(r.id)){ rIdx=Math.max(0,rIdx-1); renderAll(); }
 }
 function ignoreReview(id){
-  review=review.filter(r=>r.id!==id); dirty=true;
-  rvEdit=false; rIdx=Math.max(0,Math.min(rIdx,review.length-1));
+  const r=review.find(x=>x.id===id); if(!r) return;
+  review=review.filter(x=>x.id!==id); ignoredArchive.push({snap:r, id:r.id}); dirty=true;  rvEdit=false; rIdx=Math.max(0,Math.min(rIdx,review.length-1));
   renderAll();
-  toastSay('Ignored (sandbox). Nothing was counted; nothing was deleted.');
+  // G: honest copy — the item is archived and recoverable, not silently gone
+  toastSay('Ignored — kept in Settings \u00b7 Recovery.', {label:'Undo', fn:()=>restoreIgnored(id)});
+}
+/* G: Restore reinstates the exact object once, no duplicates */
+function restoreIgnored(id){
+  const i=ignoredArchive.findIndex(a=>a.id===id); if(i<0){ toastSay('That alert is already back in the tray.'); return; }
+  const {snap}=ignoredArchive.splice(i,1)[0];
+  if(review.some(x=>x.id===id)){ toastSay('That alert is already in the tray.'); return; }
+  review.push(snap); dirty=true; rIdx=review.length-1; renderAll();
+  toastSay('Alert back in the tray (example).');
 }
 /* Record = accepted sample entry in the chosen currency */
 function resolveReview(id){
   const r=review.find(x=>x.id===id); if(!r) return false;
   if(r.amount==null){ toastSay('Enter the amount first — you never record a missing fact silently.'); rvEdit=true; renderReview(); return false; }
-  const minor=toMinor(String(r.amount).replace(',','.'));
+  const minor=strictMinor(r.amount);
   if(minor===null||minor<=0){ toastSay('That amount is not valid (needs \u22642 decimals).'); return false; }
   if(r.dir==='UNSET'){ toastSay('Pick a direction with the arrows before recording.'); return false; }
   if(!r.cur||r.cur==='?'||!CURRENCIES.includes(r.cur)){ toastSay('Pick a currency before recording.'); return false; }
-  entries.unshift({id:'r'+id, who:'Alert \u00b7 '+(r.src.replace(' \u00b7 Example','')), kind:'Unclassified', dir:r.dir, cur:r.cur, amtMinor:minor, off:0, date:ANCHOR, origin:'Capture', status:'Completed', note:'Recorded from Review (example)', account:'Unassigned'});
+  const rid='r'+id+'_'+Date.now();
+  entries.unshift({id:rid, who:'Alert \u00b7 '+(r.src.replace(' \u00b7 Example','')), kind:'Unclassified', dir:r.dir, cur:r.cur, amtMinor:minor, off:0, date:ANCHOR, origin:'Capture', status:'Completed', note:'Recorded from Review (example)', account:'Unassigned'});
   review=review.filter(x=>x.id!==id); dirty=true;
+  // D: the new record must be findable the moment the user returns Home —
+  // Home switches to the recorded currency, and the toast carries a real View-record action.
+  lastRecordId=rid; viewCur=r.cur;
   renderAll();
-  toastSay(r.cur!=='NGN' ? 'Recorded under '+r.cur+'. NGN totals untouched.' : 'Recorded (example).');
+  toastSay('Recorded under '+r.cur+' \u2014 Home now shows '+r.cur+'.', {label:'View record', fn:()=>openDetail(rid)});
   return true;
 }
 /* openReviewEdit keeps the contract: focus the review editor for a given id */
@@ -857,13 +971,22 @@ const KIND_DIR = {Expense:'OUT', Income:'IN', Fee:'OUT'};
 const KIND_LABEL = {Transfer:'Own transfer'};
 const KIND_H = {Expense:'Expense must be money OUT', Income:'Income must be money IN', Fee:'A fee goes OUT'};
 
+/* B: advanced fields live in a hidden holder on the Add screen between sheet uses */
+function parkMoreFields(){
+  const host=document.getElementById('s-add');
+  if(moreFieldsEl && host && moreFieldsEl.parentNode!==host) host.appendChild(moreFieldsEl);
+}
 function resetAddDraft(){
-  addAmt=''; addCur='NGN'; addDir='OUT'; kind='Unclassified'; stat='Completed';
+  editingId=null; // any prior edit session ends here — Cancel-then-Add can never overwrite an old record (editRow re-assigns after this)
+  addAmt=''; addCur=viewCur; addDir='OUT'; kind='Unclassified'; stat='Completed'; // B: Add inherits the current view currency
+  addMoreOpen=false;
+  parkMoreFields(); moreFieldsEl.classList.remove('on');
   const who=document.getElementById('fWho');
   if(who){ who.value=''; document.getElementById('fAcc').value=''; document.getElementById('fNote').value=''; document.getElementById('fDate').value=ANCHOR; }
+  const ctx=document.getElementById('addCtx'); ctx.hidden=true; ctx.textContent='';
+  document.getElementById('addTitle').textContent='Add record'; // draft heading matches the cleared draft state
   document.getElementById('saveBtn').setAttribute('aria-label','Save transaction');
   document.getElementById('saveErr').hidden=true;
-  document.getElementById('moreFields').classList.remove('on');
   const mb=document.getElementById('moreBtn'); mb.setAttribute('aria-expanded','false'); mb.classList.remove('on');
   renderAdd();
 }
@@ -926,8 +1049,17 @@ function buildKeypad(){
   });
 }
 function toggleMore(){
-  const f=document.getElementById('moreFields'); const on=f.classList.toggle('on');
-  const mb=document.getElementById('moreBtn'); mb.setAttribute('aria-expanded',on); mb.classList.toggle('on',on);
+  if(addMoreOpen){ closeSheet(); return; }
+  addMoreOpen=true;
+  const sheet=prepSheet('More details');
+  sheet.appendChild(el('h3',null,'More details')).style.cssText='margin:.2rem 0 .6rem;';
+  moreFieldsEl.classList.add('on');
+  sheet.appendChild(moreFieldsEl);
+  const done=el('button','btn citron block','Done'); done.setAttribute('aria-label','Close more details'); done.onclick=closeSheet;
+  sheet.appendChild(done);
+  const mb=document.getElementById('moreBtn'); mb.setAttribute('aria-expanded','true'); mb.classList.add('on');
+  openSheet();
+  const fi=sheet.querySelector('select,input'); if(fi) fi.focus({preventScroll:true});
 }
 function saveDemo(){
   const err=document.getElementById('saveErr');
@@ -945,13 +1077,18 @@ function saveDemo(){
   const note=document.getElementById('fNote').value.trim();
   if(editingId){
     const e=entries.find(x=>x.id===editingId);
-    if(e){ Object.assign(e,{who:who, dir:addDir, cur:addCur, kind, status:stat, amtMinor:minor, date:dateVal, off:dayOffset(dateVal), account:acc||'Unassigned', note:note}); }
-    editingId=null;
-    document.getElementById('saveBtn').setAttribute('aria-label','Save transaction');
-    toastSay('Updated (sandbox) — same record, not a duplicate.');
+    if(e){ const rid=editingId; // same ID — the edit updates in place, never duplicates
+      Object.assign(e,{who:who, dir:addDir, cur:addCur, kind, status:stat, amtMinor:minor, date:dateVal, off:dayOffset(dateVal), account:acc||'Unassigned', note:note});
+      editingId=null;
+      document.getElementById('saveBtn').setAttribute('aria-label','Save transaction');
+      lastRecordId=rid;
+      toastSay('Updated (sandbox) — same record, not a duplicate.', {label:'View record', fn:()=>openDetail(rid)});
+    }
   } else {
-    entries.unshift({id:'x'+Date.now(), who:who||'Manual entry', kind, dir:addDir, cur:addCur, amtMinor:minor, date:dateVal, off:dayOffset(dateVal), origin:'Manual', status:stat, note:note||'Example sandbox entry', account:acc||'Unassigned'});
-    toastSay('Example saved — sandbox only. Reset any time.');
+    const rid='x'+Date.now();
+    entries.unshift({id:rid, who:who||'Manual entry', kind, dir:addDir, cur:addCur, amtMinor:minor, date:dateVal, off:dayOffset(dateVal), origin:'Manual', status:stat, note:note, account:acc||'Unassigned'}); // empty note stays empty — no fabricated default
+    lastRecordId=rid;
+    toastSay('Example saved — sandbox only. Reset any time.', {label:'View record', fn:()=>openDetail(rid)});
   }
   document.getElementById('saveErr').hidden=true;
   viewCur=addCur;
@@ -961,8 +1098,7 @@ function saveDemo(){
 /*————————————— DETAIL receipt sheet —————————————*/
 function openDetail(id){
   const e=entries.find(x=>x.id===id); if(!e) return;
-  const sheet=document.getElementById('sheet'); sheet.textContent='';
-  sheet.appendChild(el('div','grabber'));
+  const sheet=prepSheet('Detail');
   const head=el('div',null); head.style.cssText='display:flex;align-items:flex-start;gap:10px;';
   const amt=el('div','rvamt',fmt(e.amtMinor,e.cur)); amt.style.cssText='font-size:1.9rem;flex:1;';
   head.appendChild(amt);
@@ -982,44 +1118,81 @@ function openDetail(id){
   sheet.appendChild(kvRow('Came in as', e.origin));
   sheet.appendChild(kvRow('Date', e.date));
   if(e.kind==='Transfer') sheet.appendChild(el('p','setnote','Own transfer — the transfer itself stays out of the in / out totals so it isn\u2019t counted twice.'));
-  // delete confirmation lives here — proposed only
+  // delete confirmation lives here — built at confirm time with the record name in plain text
   const confirmZone=el('div',null); confirmZone.id='delZone'; confirmZone.style.marginTop='12px'; confirmZone.hidden=true;
-  const confRow=el('div','rvact');
-  const bRed=el('button','btn red'); bRed.textContent='Delete from ledger'; bRed.setAttribute('aria-label','Delete this record permanently');
-  bRed.onclick=()=>deleteRow(id);
-  const bKeep=el('button','btn ghost'); bKeep.textContent='Keep';
-  confRow.appendChild(bRed); confRow.appendChild(bKeep);
-  confirmZone.appendChild(confRow);
   sheet.appendChild(confirmZone);
   openSheet();
 }
 function confirmDelete(id){
+  const e=entries.find(x=>x.id===id); if(!e) return;
   const z=document.getElementById('delZone'); if(!z) return;
-  z.hidden=false; const f=z.querySelector('button'); if(f) f.focus({preventScroll:true});
+  // G: plain-text naming of the Cashflow record only — never a bank payment
+  z.hidden=false;
+  z.textContent='';
+  const tp=el('p','setnote','Delete \u201c'+(e.who||'record')+'\u201d ('+fmt(e.amtMinor,e.cur)+') from the Cashflow diary? You can undo right after, or restore it from Settings \u00b7 Recovery.');
+  tp.style.cssText='font-size:.85rem;';
+  z.appendChild(tp);
+  const confRow=el('div','rvact');
+  const bRed=el('button','btn red'); bRed.textContent='Delete record'; bRed.setAttribute('aria-label','Delete this Cashflow record');
+  bRed.onclick=()=>deleteRow(id);
+  const bKeep=el('button','btn ghost'); bKeep.textContent='Keep';
+  bKeep.onclick=()=>{ z.hidden=true; closeSheet(); };
+  confRow.appendChild(bRed); confRow.appendChild(bKeep);
+  z.appendChild(confRow);
+  const f=z.querySelector('button'); if(f) f.focus({preventScroll:true});
 }
 function editRow(id){
   const e=entries.find(x=>x.id===id); if(!e) return;
-  closeSheet(); show('add'); resetAddDraft();
+  closeSheet();
+  resetAddDraft();
+  // C: editingId is set BEFORE the Add screen is shown — heading reads "Edit record", not "Add record"
   editingId=id;
-  document.getElementById('fWho').value=e.who;
+  document.getElementById('fWho').value=e.who||'';
   document.getElementById('fAcc').value=e.account||'';
   document.getElementById('fNote').value=e.note||'';
   document.getElementById('fDate').value=e.date;
-  addCur=e.cur; addDir=e.dir; kind=e.kind; stat=e.status;
+  addCur=e.cur; addDir=e.dir; kind=e.kind; stat=e.status; // editing keeps the record's own currency
   addAmt=(e.amtMinor/100).toFixed(2);
+  show('add'); // addTitle reflects "Edit record" now that editingId is set
+  const ctx=document.getElementById('addCtx');
+  ctx.hidden=false; ctx.textContent=(e.who||'Record')+' \u00b7 '+fmt(e.amtMinor,e.cur);
   document.getElementById('saveBtn').setAttribute('aria-label','Save changes');
   renderAdd();
-  toastSay('Editing this record — saving updates it in place.');
+  document.getElementById('fWho').focus({preventScroll:true});
 }
 function deleteRow(id){
+  const e=entries.find(x=>x.id===id); if(!e) return;
   entries=entries.filter(x=>x.id!==id); dirty=true;
+  deletedArchive.push({snap:e, id:e.id}); lastDeletedId=id; // G: recovery archive
   closeSheet(); renderAll();
-  toastSay('Deleted (sandbox). Reset restores the examples.');
+  toastSay('Deleted \u201c'+(e.who||'record')+'\u201d from Cashflow.', {label:'Undo', fn:()=>restoreDeleted(id)});
+}
+/* G: Undo restores the same record, exact data, once. It never resurrects another operation's record. */
+function restoreDeleted(id){
+  const i=deletedArchive.findIndex(a=>a.id===id); if(i<0){ toastSay('Already restored \u2014 it\u2019s back in the diary.'); return; }
+  if(entries.some(x=>x.id===id)){ deletedArchive.splice(i,1); return; }
+  const {snap}=deletedArchive.splice(i,1)[0];
+  entries.push(snap); dirty=true; renderAll();
+  toastSay('Record restored \u2014 same ID, exact data.');
 }
 
 /* ————— sheets, dock, toast, tabs ————— */
 let sheetPrevFocus=null;
-function phoneToTop(){ const p=document.getElementById('phone'); if(p) p.scrollTop=0; }
+/* shared sheet builder — parks the Add advanced fields safely before wiping the sheet */
+function prepSheet(label){
+  const sheet=document.getElementById('sheet');
+  sheet.setAttribute('aria-label',label);
+  parkMoreFields(); // fields survive every sheet rebuild, ids stay live for the form
+  sheet.textContent='';
+  sheet.appendChild(el('div','grabber'));
+  return sheet;
+}
+function phoneToTop(){
+  // H: scroll restoration owns the phone-frame screens — the outer document never has to scroll
+  if(window.scrollY) window.scrollTo(0,0); // routes also restore the real window/header, not just the frame
+  const p=document.getElementById('phone'); if(p) p.scrollTop=0;
+  document.querySelectorAll('.ph-body .screen').forEach(s=>{ s.scrollTop=0; });
+}
 function openSheet(){
   const s=document.getElementById('sheet');
   sheetPrevFocus=document.activeElement;
@@ -1034,6 +1207,13 @@ function closeSheet(){
   const s=document.getElementById('sheet'); s.classList.remove('on');
   document.getElementById('scrim').classList.remove('on');
   document.getElementById('phone').classList.remove('sheetopen');
+  if(addMoreOpen){
+    addMoreOpen=false;
+    moreFieldsEl.classList.remove('on');
+    parkMoreFields(); // return the advanced fields to the Add screen, ids intact
+    const mb=document.getElementById('moreBtn'); mb.setAttribute('aria-expanded','false'); mb.classList.remove('on');
+  }
+  s.setAttribute('aria-label','Detail');
   const body=document.querySelector('.ph-body'); if(body) body.inert=false;
   phoneToTop();
   if(sheetPrevFocus && sheetPrevFocus.focus) sheetPrevFocus.focus({preventScroll:true});
@@ -1053,13 +1233,208 @@ document.addEventListener('keydown', ev=>{
   }
 });
 let tT;
-function toastSay(msg){
-  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('on');
-  clearTimeout(tT); tT=setTimeout(()=>t.classList.remove('on'), 2400);
+function toastSay(msg, act){
+  const t=document.getElementById('toast');
+  t.textContent='';
+  t.appendChild(document.createTextNode(msg));
+  if(act){
+    const b=el('button','toastact',act.label);
+    b.onclick=()=>{ t.classList.remove('on'); act.fn(); };
+    t.appendChild(b);
+  }
+  t.classList.add('on');
+  clearTimeout(tT); tT=setTimeout(()=>t.classList.remove('on'), 4200);
+}
+function openRecovery(){
+  const sheet=prepSheet('Recovery');
+  sheet.appendChild(el('h3',null,'Recovery')).style.cssText='margin:.2rem 0 .3rem;';
+  sheet.appendChild(el('p','setnote','Removed items wait here — restorable until Reset examples. Example data only.'));
+  const section=(title, list, restore, emptyMsg)=>{
+    sheet.appendChild(el('p','setnote',title)).style.cssText='color:#F5F4EE;font-weight:700;';
+    if(!list.length){ sheet.appendChild(el('p','setnote',emptyMsg)); return; }
+    list.forEach(a=>{
+      const row=el('div','kv');
+      const s=a.snap;
+      const isRec = 'amtMinor' in s;
+      const kindword = isRec ? 'record' : 'alert';
+      const txt = isRec
+        ? (s.who||'Record')+' \u00b7 '+fmt(s.amtMinor,s.cur)
+        : (s.src||'Alert')+' \u00b7 '+(s.amount ? s.amount+' '+(CURRENCIES.includes(s.cur)?s.cur:'?') : 'amount not read');
+      row.appendChild(el('span','k',txt));
+      const b=el('button','fchip','Restore');
+      b.setAttribute('aria-label','Restore '+kindword+' '+txt);
+      b.onclick=()=>{ restore(s.id); openRecovery(); };
+      row.appendChild(b);
+      sheet.appendChild(row);
+    });
+  };
+  section('Recently deleted', deletedArchive, restoreDeleted, 'Nothing deleted right now.');
+  section('Ignored alerts', ignoredArchive, restoreIgnored, 'Nothing ignored right now.');
+  const ok=el('button','btn citron block','Close'); ok.onclick=closeSheet;
+  sheet.appendChild(ok); openSheet();
+}
+/* A: guided capture setup — honest about being a prototype; no fake Connected/Listening/Healthy states */
+function captureSetup(){
+  const sheet=prepSheet('Capture setup guide');
+  sheet.appendChild(el('h3',null,'Capture setup')).style.cssText='margin:.2rem 0 .3rem;';
+  sheet.appendChild(el('p','setnote','Example flow only — the controls below can\u2019t grant real device access.'));
+  // source-selection demonstration — neutral demo bank apps, marked Example only; never counts in data
+  sheet.appendChild(el('p','setnote','Demo bank sources (Example only \u2014 demonstration; the real chooser lives in the app and nothing here counts in data):')).style.cssText='margin:.4rem 0 .2rem;';
+  const chips=el('div',null); chips.style.cssText='display:flex;flex-wrap:wrap;gap:6px;';
+  ['Demo Bank One','Demo Bank Two','Demo Bank Three'].forEach(nm=>{
+    const c=el('button','fchip',nm); c.setAttribute('aria-pressed','false');
+    c.onclick=()=>c.setAttribute('aria-pressed', String(c.getAttribute('aria-pressed')!=='true'));
+    chips.appendChild(c);
+  });
+  sheet.appendChild(chips);
+  // Android — real permissions spelled out honestly
+  const ad=el('details','alertdet'); ad.style.marginTop='10px';
+  const ads=el('summary'); ads.textContent='Android'; ads.style.minHeight='44px';
+  ad.appendChild(ads);
+  const alist=el('ol','setnote');
+  alist.style.cssText='padding-left:1.2em;margin:.2rem 0 .5rem;';
+  [
+    'Choose which apps Cashflow should read alerts from (the real chooser in the app).',
+    'Grant the notification-listener permission in Android Settings \u2014 reading alerts is a separate grant from any permission to post notifications.',
+    'Verify it for real: in the actual app, let a bank alert arrive and confirm it appears in Activity or Review.',
+  ].forEach(t=>{ const li=el('li',null,t); li.style.marginBottom='5px'; alist.appendChild(li); });
+  ad.appendChild(alist);
+  sheet.appendChild(ad);
+  // iOS — only the triggers Apple actually documents; no invented generic automation
+  const io=el('details','alertdet');
+  const ios=el('summary'); ios.textContent='iPhone (iOS)'; ios.style.minHeight='44px';
+  io.appendChild(ios);
+  const ilist=el('div','setnote');
+  ilist.innerHTML='Shortcuts automations react to specific event types, not to arbitrary notifications. Apple\u2019s documented triggers include <b>Email</b> and <b>Messages</b> (<a href="https://support.apple.com/en-kw/guide/shortcuts/apdd711f9dff/ios" target="_blank" rel="noopener">Apple\u2019s Shortcuts guide</a>); there is no supported automation that can see a notification from just any other app \u2014 a bank\u2019s app, for example. For those sources, record by hand, paste imported alert text, or use a compatible Shortcut input. Physical-device setup is unverified in this concept.';
+  ilist.style.cssText='padding:.2rem 0 .4rem;';
+  io.appendChild(ilist);
+  sheet.appendChild(io);
+  const test=el('button','btn ghost block','Try a sample alert');
+  test.setAttribute('aria-label','Try a sample alert — Example only; sample alerts never count in data');
+  test.onclick=()=>sampleAlertTest();
+  sheet.appendChild(test);
+  sheet.appendChild(el('p','setnote','Manual entry always works, even if capture isn\u2019t set up \u2014 use the + orb.'));
+  const ok=el('button','btn citron block','Close'); ok.onclick=closeSheet;
+  sheet.appendChild(ok); openSheet();
+}
+/* A/G: try-a-sample demo — a completely isolated sheet with its own local demo state.
+   It never mutates entries, review, filters, view currency, totals or dirty;
+   working Edit and Undo run on the demo list only, and a clear-vs-uncertain
+   demonstration shows both recording paths side by side. */
+let demoList=[], demoEd=null, demoSeq=0;
+/* entrypoint kept for the Android-guide button and its capture callback (r18's
+   renderSampleDemo rename broke both): a fresh, fully isolated session each open */
+function sampleAlertTest(){ demoList.length=0; demoEd=null; demoSeq=0; renderSampleDemo(); }
+function renderSampleDemo(){
+  demoEd=null;
+  closeSheetQuietly();
+  const sheet=prepSheet('Try a sample alert');
+  sheet.appendChild(el('h3',null,'Try a sample alert')).style.cssText='margin:.2rem 0 .3rem;';
+  sheet.appendChild(el('p','setnote','Everything below is a demo \u2014 example only, fully isolated. No diary record, no Review-tray change, no totals effect. Each time you open this demo, it starts fresh.'));
+  const zone=el('div',null); zone.id='demoZone'; sheet.appendChild(zone);
+  const ok=el('button','btn citron block','Done'); ok.setAttribute('aria-label','Close the sample demo');
+  ok.onclick=()=>{ demoList.length=0; demoEd=null; demoSeq=0; closeSheetQuietly(); }; sheet.appendChild(ok);
+  fillDemoZone(); openSheet();
+}
+function fillDemoZone(){
+  const zone=document.getElementById('demoZone'); if(!zone) return;
+  zone.textContent='';
+  /* the demo's own record list — each row carries a working Edit and Undo */
+  const listWrap=el('div',null); listWrap.style.cssText='margin-bottom:10px;';
+  if(!demoList.length){
+    listWrap.appendChild(el('p','setnote','Nothing recorded in this demo yet \u2014 the real examples on Home are untouched.'));
+  } else {
+    listWrap.appendChild(el('p','setnote','Demo records (isolated \u2014 undo or edit freely):')).style.cssText='color:#F5F4EE;font-weight:700;margin:.2rem 0 .2rem;';
+    demoList.forEach(d=>{
+      const row=el('div','kv');
+      row.appendChild(el('span','k','Demo \u00b7 '+fmt(d.amt,d.cur)+' \u00b7 money '+(d.dir==='IN'?'in':'out')));
+      const acts=el('span',null); acts.style.cssText='display:flex;gap:4px;flex:0 0 auto;';
+      acts.appendChild(icoBtn('ignico','Edit this demo record','Edit',SVG.pencil,()=>{
+        demoEd={editing:d, amt:(d.amt/100).toFixed(2), dir:d.dir}; fillDemoZone();
+      }));
+      acts.appendChild(icoBtn('ignico','Undo this demo record','Undo',SVG.undo,()=>{
+        demoList=demoList.filter(x=>x.id!==d.id); demoEd=null; fillDemoZone();
+      }));
+      row.appendChild(acts); listWrap.appendChild(row);
+    });
+  }
+  zone.appendChild(listWrap);
+  /* clear-alert demonstration: one look, one press, recorded in the demo */
+  const clearCard=el('div','amtfield'); clearCard.style.cssText='margin-bottom:8px;';
+  clearCard.appendChild(el('span',null,'Demo Bank \u00b7 \u201c\u2026 you received NGN 2,000.00 from Aduke at 20:41.\u201d')).style.cssText='display:block;';
+  const capA=el('span',null,'Clear \u2014 the amount reads unambiguously, so it can record with one look.'); capA.style.cssText='display:block;font-size:.8rem;color:#A0A7A6;margin-top:4px;';
+  clearCard.appendChild(capA);
+  const recA=el('button','fchip','Record (demo)'); recA.setAttribute('aria-label','Record the clear demo alert \u2014 example only, isolated');
+  recA.style.marginTop='8px';
+  recA.onclick=()=>{
+    demoList.push({id:'demo'+(++demoSeq), amt:200000, cur:'NGN', dir:'IN'});
+    demoEd=null; fillDemoZone();
+    toastSay('Recorded in the demo only \u2014 Example data on Home is unchanged.');
+  };
+  clearCard.appendChild(recA);
+  zone.appendChild(clearCard);
+  /* uncertain-alert demonstration: unanswered facts keep it a question in this demo —
+     the same focused question flow as Review, with no Review-tray mutation */
+  const unCard=el('div','amtfield');
+  unCard.appendChild(el('span',null,'Demo Bank \u00b7 \u201c\u2026 activity on your account at 21:02.\u201d')).style.cssText='display:block;';
+  unCard.appendChild(el('span',null,'Uncertain \u2014 neither amount nor direction reads clearly, so it asks instead of recording.')).style.cssText='display:block;font-size:.8rem;color:#A0A7A6;margin-top:4px;';
+  zone.appendChild(unCard);
+  const ed=demoEd;
+  if(!ed){
+    const ask=el('button','fchip','Try answering it (demo)'); ask.style.marginTop='8px';
+    ask.setAttribute('aria-label','Try answering the uncertain demo alert \u2014 example only, isolated');
+    ask.onclick=()=>{ demoEd={editing:null, amt:'', dir:'UNSET'}; fillDemoZone(); };
+    unCard.appendChild(ask);
+    return;
+  }
+  /* answer-in-place editor for the uncertain demo alert (or for editing a demo row) */
+  unCard.appendChild(el('span',null, ed.editing ? 'Editing the demo record — change the amount and direction.' : 'The alert asks: how much, and which way? (In this demo.)')).style.cssText='display:block;font-size:.8rem;color:#F5F4EE;margin-top:8px;';
+  const inp=document.createElement('input'); inp.id='demoAmt'; inp.type='text'; inp.inputMode='decimal'; inp.placeholder='e.g. 2000.00'; inp.value=ed.amt||'';
+  inp.setAttribute('aria-label','Demo amount'); inp.style.cssText='margin-top:6px;';
+  unCard.appendChild(inp);
+  const dirSeg=el('div','seg'); dirSeg.style.cssText='margin-top:6px;';
+  const dirBtns={};
+  ['IN','OUT'].forEach(d=>{
+    const b=el('button',null); b.id='demoDir-'+d.toLowerCase();
+    b.setAttribute('aria-label','Demo money '+(d==='IN'?'in':'out')); b.title='Money '+(d==='IN'?'in':'out');
+    b.setAttribute('aria-pressed', String(ed.dir===d));
+    b.innerHTML='<span style="display:grid;place-items:center">'+dirIco(d)+'</span><span class="tinylab">'+(d==='IN'?'In':'Out')+'</span>';
+    dirBtns[d]=b;
+    b.onclick=()=>{ ed.dir=d; ['IN','OUT'].forEach(k=>dirBtns[k].setAttribute('aria-pressed', String(k===d))); setDemoMsg(); };
+    dirSeg.appendChild(b);
+  });
+  unCard.appendChild(dirSeg);
+  const msg=el('div','erv'); msg.id='demoMsg'; msg.setAttribute('role','status'); msg.setAttribute('aria-live','polite');
+  unCard.appendChild(msg);
+  const recRow=el('div','rvact'); recRow.style.cssText='margin-top:10px;';
+  const recB=el('button','btn citron'); recB.id='demoRecord'; recB.innerHTML=SVG.check;
+  recB.setAttribute('aria-label','Record in the demo — example only, isolated'); recB.title='Record';
+  const leave=el('button','webl','Leave it');
+  leave.setAttribute('aria-label','Leave the uncertain demo alert unanswered');
+  leave.onclick=()=>{ demoEd=null; fillDemoZone(); };
+  recRow.appendChild(recB); recRow.appendChild(leave);
+  unCard.appendChild(recRow);
+  const setDemoMsg=()=>{
+    const m=strictMinor(inp.value);
+    let t='';
+    if(!inp.value.trim()) t = ed.editing ? 'Type the demo amount — clearing it won\u2019t fall back to the old value.' : 'Type the demo amount.';
+    else if(m===null||m<=0) t='Use up to 2 decimal places \u2014 digits only, above zero.';
+    else if(ed.dir!=='IN' && ed.dir!=='OUT') t='Pick In or Out for the demo.';
+    msg.textContent=t; recB.disabled=!!t;
+  };
+  inp.oninput=setDemoMsg;
+  recB.onclick=()=>{
+    const m=strictMinor(inp.value);
+    if(m===null||m<=0 || (ed.dir!=='IN'&&ed.dir!=='OUT')) return;
+    if(ed.editing){ const d=ed.editing; const i=demoList.indexOf(d); if(i>=0) demoList[i]={...d, amt:m, dir:ed.dir}; }
+    else demoList.push({id:'demo'+(++demoSeq), amt:m, cur:'NGN', dir:ed.dir});
+    demoEd=null; fillDemoZone();
+    toastSay('Saved in the demo only \u2014 Example data on Home is unchanged.');
+  };
+  setDemoMsg();
 }
 function settingsNote(){
-  const sheet=document.getElementById('sheet'); sheet.textContent='';
-  sheet.appendChild(el('div','grabber'));
+  const sheet=prepSheet('Settings');
   sheet.appendChild(el('h3',null,'Settings')).style.cssText='margin:.2rem 0 .3rem;';
   // working view-currency choice (the same currency everywhere is not touched — this only changes what Home shows)
   const curRow=el('div','kv');
@@ -1089,11 +1464,28 @@ function settingsNote(){
   legend.innerHTML='Home \u00b7 Add (+) \u00b7 Review tray, with a count of alerts waiting \u00b7 Filter funnel \u00b7 Search magnifier \u00b7 Incoming = arrow to the lower-left, outgoing = arrow to the upper-right \u00b7 Record/Save = check \u00b7 Cancel = X \u00b7 Ignore = minus-circle \u00b7 Original alert = receipt.';
   lg.appendChild(legend);
   sheet.appendChild(lg);
+  // A/G: first-run learning, capture setup and recovery remain reachable from Settings after the intro
+  const replay=el('button','btn ghost block','Replay the intro walkthrough');
+  replay.setAttribute('aria-label','Replay the intro walkthrough — example data, nothing changes in the ledger');
+  replay.onclick=()=>{ closeSheetQuietly(); showIntro(); };
+  sheet.appendChild(replay);
+  const setup=el('button','btn ghost block','Capture setup guide');
+  setup.setAttribute('aria-label','Capture setup guide — example flow only, no live capture');
+  setup.onclick=()=>captureSetup();
+  sheet.appendChild(setup);
+  const recov=el('button','btn ghost block','Recovery — deleted records & ignored alerts');
+  recov.setAttribute('aria-label','Recovery: recently deleted records and ignored alerts');
+  recov.onclick=()=>openRecovery();
+  sheet.appendChild(recov);
   sheet.appendChild(el('p','setnote','Export isn\u2019t part of this prototype yet.'));
   const ok=el('button','btn citron block','Close'); ok.onclick=closeSheet;
   sheet.appendChild(ok); openSheet();
 }
 function show(s){
+  // any real route ends the intro walkthrough; the Home tab becomes active once it finishes
+  introDone=true;
+  const si=document.getElementById('s-intro'); if(si) si.classList.remove('on');
+  document.getElementById('phone').classList.remove('intromode');
   ['home','review','add'].forEach(k=>{
     const sc=document.getElementById('s-'+k); if(sc) sc.classList.toggle('on', k===s);
     const tb=document.getElementById('t-'+k); if(tb) tb.setAttribute('aria-selected', String(k===s));
@@ -1102,9 +1494,11 @@ function show(s){
       if(k===s) nb.setAttribute('aria-current','page'); else nb.removeAttribute('aria-current');
     }
   });
-  document.getElementById('addTitle').textContent = editingId ? 'Edit record' : 'Add record';
+  const at=document.getElementById('addTitle');
+  if(at) at.textContent = editingId ? 'Edit record' : 'Add record';
+  const actx=document.getElementById('addCtx'); if(actx && !editingId){ actx.hidden=true; actx.textContent=''; }
   document.getElementById('phone').classList.toggle('addmode', s==='add'); // dock hides during focused entry
-  phoneToTop();
+  phoneToTop(); // H: route transition restores scroll on the screen itself (and never relies on the window)
   if(s==='home' && !document.documentElement.classList.contains('rm') && !window.matchMedia('(prefers-reduced-motion: reduce)').matches){
     const rows=document.querySelectorAll('#s-home .trow');
     rows.forEach((r,i)=>{ if(i<5){ r.classList.remove('sw'); void r.offsetWidth; r.style.animationDelay=(i*30)+'ms'; r.classList.add('sw'); } });
@@ -1117,13 +1511,34 @@ rmBtn.onclick=()=>{
   rmBtn.setAttribute('aria-pressed', String(on));
 };
 function closeSheetQuietly(){ const s=document.getElementById('sheet'); if(s.classList.contains('on')) closeSheet(); sheetPrevFocus=null; phoneToTop(); }
+/* ————— A: skippable first-run walkthrough; replays from Settings only, never nags ————— */
+function showIntro(){
+  ['home','review','add'].forEach(k=>{
+    const sc=document.getElementById('s-'+k); if(sc) sc.classList.remove('on');
+    const tb=document.getElementById('t-'+k); if(tb) tb.setAttribute('aria-selected','false');
+    const nb=document.getElementById('n-'+k); if(nb) nb.removeAttribute('aria-current');
+  });
+  const ph=document.getElementById('phone');
+  ph.classList.add('intromode'); ph.classList.remove('addmode');
+  document.getElementById('s-intro').classList.add('on');
+  phoneToTop();
+  const f=document.querySelector('#s-intro button'); if(f) f.focus({preventScroll:true});
+}
+function finishIntro(next){
+  introDone=true;
+  document.getElementById('s-intro').classList.remove('on');
+  document.getElementById('phone').classList.remove('intromode');
+  if(next==='add') openAdd(); else show('home');
+}
 function resetAll(){
   seed(); rvEdit=false; rIdx=0;
+  deletedArchive.length=0; ignoredArchive.length=0; lastRecordId=null; lastDeletedId=null; // G: recovery archives start clean
+  demoList.length=0; demoEd=null; demoSeq=0; // isolated sample demo resets with everything else
   // close every reveal + restore collapsed states
   ['fwrap','searchwrap'].forEach(id=>{ const w=document.getElementById(id); if(w) w.classList.remove('on'); });
   document.getElementById('filterBtn').classList.remove('on'); document.getElementById('filterBtn').setAttribute('aria-expanded','false');
   document.getElementById('searchBtn').classList.remove('on'); document.getElementById('searchBtn').setAttribute('aria-expanded','false');
-  closeSheetQuietly(); renderAll(); show('home');
+  closeSheetQuietly(); renderAll(); show('home'); // resets never replay the intro — the dataset and the walkthrough are separate
   toastSay('Examples restored — ledger, review, drafts and filters back to seed.');
 }
 document.getElementById('resetAll').onclick=resetAll;
@@ -1131,6 +1546,6 @@ document.getElementById('t-review').addEventListener('click',()=>{ rvEdit=false;
 
 function renderAll(){ renderHome(); renderReview(); renderAdd(); }
 seed(); buildKeypad(); renderAll();
-</script>
+showIntro(); // A: an actual first visit opens on the skippable intro; show('home') skips straight to the baseline</script>
 </body>
 </html>

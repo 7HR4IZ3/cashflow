@@ -4,7 +4,8 @@ Status: current design baseline. The user **likes the dark charcoal/citron direc
 icon-only navigation, and has asked for **ongoing UX/visual polish** on this exact composition —
 hierarchy, clarity, ease of use. This is a living concept, not a gated proposal. App name stays
 **Cashflow**. Old `fresh-current-*` files and all native source are untouched; this concept lives
-only in `night-current-concept.html` + this spec.
+only in `night-current-concept.html` + this spec. First-run walkthrough / capture-honesty /
+advanced-fields / recovery fixes are in (see "Fixes round" at the end).
 
 ## Palette (dark-native, matte — no cards-on-black, no purple gradients, no glow)
 - Background `#101213` (page-level), layered surface `#1A1D1E`
@@ -86,8 +87,8 @@ Review holds USD 50.00 with unknown direction and an NGN item with unknown amoun
 OUT 975050, net −875050, NGN only. Totals count only Completed accepted records; own Transfer principal
 excluded both directions; Pending/Failed and Review excluded. Income forces IN, Expense/Fee force OUT,
 Transfer/Refund allow either. Editing keeps the record ID (no duplicate) and preserves cleared optional
-fields; `resetAll` restores every seeded state. `show()` always scrolls `phone.scrollTop=0` and focus moves
-use `{preventScroll:true}`. Sandbox memory only — no network, no native persistence.
+fields; `resetAll` restores every seeded state. Routes restore the phone-frame scroll and the real
+window scroll/header. Sandbox memory only — no network, no native persistence.
 
 ## Public API (regression contract, preserved)
 `seed, renderAll, entries, review, editingId, totalsFor(cur,dir), toMinor, openAdd, saveDemo, editRow,
@@ -107,4 +108,30 @@ press scale `.96`, one short screen fade; no count-ups, no loops, no fake live c
 - `ui/FlowScreens.kt` — editor / review / detail screens map to the fullscreen Add entry, Review
   focused-question flow, and receipt sheet
 - `ui/theme/CashflowTheme.kt` — charcoal/citron palette (user-liked dark direction), tabular-num typography, dark `colorScheme`
-- `ui/components/LedgerRow.kt` — row geometry, avatars, arrow direction cues, status economy
+- `ui/LedgerRow.kt` — row geometry, avatars, arrow direction cues, status economy
+
+## Fixes round (first-run walkthrough feedback; all in `night-current-concept.html`)
+
+<details><summary>Before / after</summary>
+
+| Area | Before | After |
+|---|---|---|
+| Intro | None — cold start on Home | Skippable intro, kept short: diary-not-balance message, three icon-led lines, and a worked sample action — "Try a sample alert" opens a fully isolated demo (record, edit, undo shown); replay lives in Settings; Skip / manual entry / capture setup retained; routes finish it; reset never replays it |
+| Capture setup | No guidance, real permissions never named | Intro + Settings guide with neutral demo-bank source chips ("Example only"), Android notification-listener steps verified in Activity, iOS scoped honestly: Shortcuts reacts to specific event types (Email and Messages documented) and cannot see arbitrary other-app notifications, so absence is stated for that gap only; manual entry always named as the fallback; no fake Connected/Listening/Healthy states, no developer prose |
+| Sample alert | — | Try a sample alert is a fully isolated demo sheet (from intro + setup guide): its own local demo records with working Edit/Undo and a clear-vs-uncertain side-by-side demonstration — never mutates entries, review, filters, currency or totals |
+| Add fields | Name/kind/status/account/note/date all inline after the keypad, pushing Save off-screen at 390×844 | Primary = amount + "What was it for?" (optional); kind/status/account/note/date move to the More-details sheet; Save always reachable |
+| Scroll restore | `phone.scrollTop` only | Routes also restore real window scroll/header |
+| Edit heading | `editingId` set after `show('add')` → header read "Add record", no context | `editingId` set first → "Edit record" + context line (name · amount); same ID, optional field clears preserved |
+| Add currency | Always NGN | Add inherits Home view currency; edits keep the record's own |
+| Save feedback | Plain toast | Toast with a real "View record" action for both creating and editing, opening the exact record even if filters/period/search would hide it; empty new note stays empty (no fabricated default); Home switches to the record's currency |
+| Filters | Direction and source mutually exclusive | Combined families (direction + source together); labels map correctly to Capture/Manual; "Matched net" when scoped; active counts on collapsed controls |
+| Review errors | Record button silently disabled | Inline aria-live reasons: missing/unknown currency (only real supported members count), amount form (strict digits — comma-stripping is out, so "1,5" is invalid), zero, unpicked direction; clears when valid; "Not sure? Leave it" always offers an exit; a blank edited amount never falls back to the old amount |
+| Delete/ignore | Sandbox-only toast, no undo, unrecoverable | Immediate Undo in toast + Settings · Recovery lists both, restores exact ID once; per-operation callbacks; reset clears archives; copy says Cashflow-record only |
+| Prerequisites | — | No viewport units / `html,body` height; sample and seed data unchanged (NGN pool 100000/975050/net −875050 minor; USD 50 review; NGN amount missing) |
+
+</details>
+
+Public API unchanged (`seed, renderAll, show, resetAll, openAdd, editRow, resolveReview, toMinor,
+totalsFor`, ids `fWho/fAcc/fNote/fDate/kindSel/statSel/rvAmt` intact). Internals added:
+`showIntro/finishIntro/captureSetup/sampleAlertTest/openRecovery/prepSheet/parkMoreFields`,
+`deletedArchive/ignoredArchive`, archived items carry their own `id` so restore is exact.
