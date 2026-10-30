@@ -48,8 +48,8 @@ import app.cashflow.ui.util.PaperDates
 
 private enum class SettingsPage(val title: String) {
     MAIN("Settings"),
-    LEGEND("Icon legend"),
-    CAPTURE("Capture setup"),
+    HELP("Help"),
+    CAPTURE("Capture"),
     APPS("Apps to watch"),
     PASTE("Paste an alert"),
     RECOVERY("Recovery"),
@@ -82,11 +82,11 @@ internal fun SettingsSheet(
         }
         when (page) {
             SettingsPage.MAIN -> MainPage(
-                state, actions, reduceMotion, onReduceMotion, onReplayIntro, onToast,
+                state, actions, reduceMotion, onReduceMotion, onToast,
                 open = { page = it },
             )
-            SettingsPage.LEGEND -> LegendPage()
-            SettingsPage.CAPTURE -> CapturePage(state, actions, openApps = { page = SettingsPage.APPS })
+            SettingsPage.HELP -> HelpPage(onReplayIntro)
+            SettingsPage.CAPTURE -> CapturePage(state, actions, open = { page = it })
             SettingsPage.APPS -> AppsPage(state, actions)
             SettingsPage.PASTE -> PastePage(actions, onToast, onDone = { page = SettingsPage.MAIN })
             SettingsPage.RECOVERY -> RecoveryPage(state, actions, onToast)
@@ -100,16 +100,24 @@ private fun MainPage(
     actions: CashflowActions,
     reduceMotion: Boolean,
     onReduceMotion: (Boolean) -> Unit,
-    onReplayIntro: () -> Unit,
     onToast: (String) -> Unit,
     open: (SettingsPage) -> Unit,
 ) {
     val c = LocalCashflowColors.current
     val recoverable = state.entries.count { it.deleted } + state.ignoredReview.size
+    val watching = state.capture.sources.count { it.selected }
+    NavLine("Capture",
+        when {
+            state.capturePaused -> "Paused"
+            state.capture.platform == "Android" && !state.capture.accessGranted -> "Needs access"
+            watching > 0 -> if (watching == 1) "1 app" else "$watching apps"
+            else -> "On"
+        },
+        onClick = { open(SettingsPage.CAPTURE) },
+    )
     SettingRow(
         icon = null,
         title = "View currency",
-        value = "Totals count one currency at a time.",
         trailing = {
             CurrencyGlyphPicker(
                 selected = state.currency,
@@ -118,33 +126,42 @@ private fun MainPage(
             )
         },
     )
-    Divider()
-    ToggleRow(
-        title = "Reduce motion",
-        value = "Applies while the app is open; it resets on restart.",
-        checked = reduceMotion,
-        onChecked = onReduceMotion,
-    )
-    Divider()
-    SettingRow(CFIcons.Receipt, "Icon legend", onClick = { open(SettingsPage.LEGEND) })
-    SettingRow(Icons.Outlined.Settings, "Capture setup", value = "How alerts reach Cashflow", onClick = { open(SettingsPage.CAPTURE) })
-    SettingRow(CFIcons.Receipt, "Paste an alert", value = "Read on this device only", onClick = { open(SettingsPage.PASTE) })
-    SettingRow(
-        CFIcons.Undo, "Recovery",
-        value = if (recoverable == 0) "Nothing deleted or ignored" else "$recoverable to restore",
-        onClick = { open(SettingsPage.RECOVERY) },
-    )
-    SettingRow(Icons.Outlined.Home, "Replay the intro", onClick = onReplayIntro)
-    SettingRow(
-        CFIcons.ArrowOut, "Export CSV",
-        onClick = { onToast(actions.exportCsv() ?: "Share sheet opened.") },
-    )
-    Spacer(Modifier.height(8.dp))
+    ToggleLine("Reduce motion", reduceMotion, onReduceMotion)
+    NavLine("Recovery", if (recoverable == 0) "" else "$recoverable", onClick = { open(SettingsPage.RECOVERY) })
+    NavLine("Export CSV", "", onClick = { onToast(actions.exportCsv() ?: "Share sheet opened.") })
+    NavLine("Help", "", onClick = { open(SettingsPage.HELP) })
+    Spacer(Modifier.height(10.dp))
     Text(
-        "Cashflow is a record book. It does not move money or connect to a bank. " +
-            "No alert text leaves this device in this build.",
+        "A record book. It never moves money or touches a bank, and alert text stays on this device.",
         style = CamelType.LedgerLabel, color = c.muted,
     )
+}
+
+/** One-line row: icon, title, quiet value, chevron. */
+@Composable
+private fun NavLine(title: String, value: String, onClick: () -> Unit) {
+    val c = LocalCashflowColors.current
+    SettingRow(
+        icon = null, title = title, onClick = onClick,
+        trailing = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (value.isNotEmpty()) Text(value, style = CamelType.LedgerBody, color = c.muted)
+                Icon(CFIcons.ChevronRight, null, tint = c.muted, modifier = Modifier.size(18.dp))
+            }
+        },
+    )
+}
+
+@Composable
+private fun ToggleLine(title: String, checked: Boolean, onChecked: (Boolean) -> Unit) {
+    ToggleRow(title = title, value = null, checked = checked, onChecked = onChecked)
+}
+
+@Composable
+private fun HelpPage(onReplayIntro: () -> Unit) {
+    GhostButton("Replay the intro", onReplayIntro, Modifier.fillMaxWidth())
+    Spacer(Modifier.height(10.dp))
+    LegendPage()
 }
 
 @Composable
@@ -215,30 +232,29 @@ private fun GuideLine(n: String, text: String) {
 }
 
 @Composable
-private fun CapturePage(state: CashflowState, actions: CashflowActions, openApps: () -> Unit) {
+private fun CapturePage(state: CashflowState, actions: CashflowActions, open: (SettingsPage) -> Unit) {
     val c = LocalCashflowColors.current
-    CaptureGuideBody(state, actions)
-    Spacer(Modifier.height(10.dp))
-    Divider()
-    ToggleRow(
-        "Pause capture",
-        if (state.capturePaused) "Nothing is recorded right now." else "Alerts from watched apps are read.",
-        state.capturePaused, actions::setCapturePaused,
-    )
-    if (state.capture.sources.isNotEmpty()) {
-        val watching = state.capture.sources.count { it.selected }
-        SettingRow(
-            Icons.Outlined.Settings, "Apps to watch",
-            value = if (watching == 0) "None chosen yet" else "$watching watching",
-            onClick = openApps,
+    val watching = state.capture.sources.count { it.selected }
+    // Until access is on, the steps are the whole story; afterwards they get out of the way.
+    if (state.capture.accessGranted) {
+        ToggleRow("Pause capture", null, state.capturePaused, actions::setCapturePaused)
+        if (state.capture.sources.isNotEmpty()) {
+            NavLine("Apps to watch", if (watching == 0) "None" else "$watching", onClick = { open(SettingsPage.APPS) })
+        }
+        NavLine("Paste an alert", "", onClick = { open(SettingsPage.PASTE) })
+        Text(
+            state.capture.lastReceived?.let { "Last alert: ${it.take(16).replace('T', ' ')}" } ?: "No alert received yet.",
+            style = CamelType.LedgerLabel, color = c.muted, modifier = Modifier.padding(top = 8.dp),
         )
+        Spacer(Modifier.height(8.dp))
+        GhostButton("Refresh status", { actions.refreshCapture() }, Modifier.fillMaxWidth())
+    } else {
+        CaptureGuideBody(state, actions)
+        NavLine("Paste an alert instead", "", onClick = { open(SettingsPage.PASTE) })
+        if (state.capture.sources.isNotEmpty()) {
+            NavLine("Apps to watch", if (watching == 0) "None" else "$watching", onClick = { open(SettingsPage.APPS) })
+        }
     }
-    Text(
-        state.capture.lastReceived?.let { "Last alert received: $it" } ?: "No alert received yet.",
-        style = CamelType.LedgerLabel, color = c.muted, modifier = Modifier.padding(top = 8.dp),
-    )
-    Spacer(Modifier.height(8.dp))
-    GhostButton("Refresh status", { actions.refreshCapture() }, Modifier.fillMaxWidth())
 }
 
 @Composable
