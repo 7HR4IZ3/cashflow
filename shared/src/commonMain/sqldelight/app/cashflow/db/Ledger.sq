@@ -39,6 +39,9 @@ VALUES (?, ?, ?, ?, ?, ?, ?);
 resolveEvent:
 UPDATE captured_event SET entry_id = ?, review_payload = NULL, ignored = ? WHERE id = ?;
 
+setEventIgnored:
+UPDATE captured_event SET ignored = ? WHERE id = ? AND review_payload IS NOT NULL AND entry_id IS NULL;
+
 allPreferences:
 SELECT * FROM preference;
 

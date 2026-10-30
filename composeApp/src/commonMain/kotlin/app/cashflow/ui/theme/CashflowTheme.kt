@@ -5,6 +5,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -16,119 +18,95 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
- * Cashflow's paper-and-ink world.
+ * Cashflow's night-native world.
  *
- * Intent: a pocket ledger book, kept deliberately. Surfaces are warm paper,
- * structure arrives with one-point borders instead of shadows, and a single
- * accounting green does all brand work plus money-in work, and nothing else.
+ * Intent: a quiet dark ledger, read moments after a bank alert buzzes — matte
+ * charcoal, one citron accent for action and incoming money, lavender only
+ * for uncertainty, red only for failure and destructive moments. No cards on
+ * black beyond the one-level layering below; borders and surface shifts do
+ * all structural work. Cashflow is dark-native, so the theme always renders
+ * the night palette.
  *
- * Depth strategy: borders and washes only. No gradient exists anywhere.
- *
- * Text hierarchy is four inks (primary/secondary/tertiary/disabled), never
- * hierarchy by size alone. Money always renders in the Ledger face (tabular
- * figures); never in the Voice face.
+ * Surface ladder (each step one quiet lift):
+ *   bg #101213  ->  surface #1A1D1E  ->  field #262B2C
+ * Fields sit slightly darker/lighter-forward as "write here" ground, no
+ * heavy borders, no shadows except the floating dock's one quiet lift.
  */
 @Immutable
 data class CashflowColors(
-    // Surfaces: paper -> raise (cards, rows, bar) -> sop (floating sheets).
-    val paper: Color,
-    val raise: Color,
-    val sop: Color,
-    // Inset ground for form fields: a tone darker, is the "write here" signal.
-    val inset: Color,
-    // Four ink levels.
+    // Surfaces: bg (page), surface (stages, tiles, dock), sheet (floating panels).
+    val bg: Color,
+    val surface: Color,
+    val sheet: Color,
+    // Field: recessed inputs and pressed controls, one lift above surface.
+    val field: Color,
+    val fieldSoft: Color,
+    // Ink levels: primary, calm emphasis, muted, faint (placeholder only).
     val ink: Color,
     val ink2: Color,
-    val ink3: Color,
-    val ink4: Color,
-    // Hairlines: line for card edges, lineSoft for row separation.
+    val muted: Color,
+    val faint: Color,
+    // Hairlines: soft row separators, standard module borders, emphasis.
+    val hairline: Color,
     val line: Color,
-    val lineSoft: Color,
     val lineStrong: Color,
-    // Semantics: green is brand + money-in and nothing else. Out is ink, never red.
-    val green: Color,
-    val greenWash: Color,
-    val onGreen: Color,
-    val amber: Color,
-    val amberWash: Color,
-    val violet: Color,
-    val violetWash: Color,
-    val fail: Color,
-    val failWash: Color,
-    val read: Color,
+    // Citron is the single brand/action accent: primary action, selected
+    // surfaces, money-in. Never failure, never decoration.
+    val citron: Color,
+    val citronWash: Color,
+    val onCitron: Color,
+    // Lavender only for uncertainty (review badges, "amount missing").
+    val lavender: Color,
+    val lavenderWash: Color,
+    // Red only for failure and the destructive moment — never for "out".
+    val red: Color,
+    val redWash: Color,
     val dark: Boolean,
 )
 
-fun lightCashflowColors() = CashflowColors(
-    paper = Color(0xFFF7F2E8),
-    raise = Color(0xFFFCF8EF),
-    sop = Color(0xFFFFFCF3),
-    inset = Color(0xFFEFE8D9),
-    ink = Color(0xFF221E17),
-    ink2 = Color(0xFF6B6456),
-    ink3 = Color(0xFF736B5D),
-    ink4 = Color(0xFFB9B1A1),
-    line = Color(0x1A221E17),
-    lineSoft = Color(0x0F221E17),
-    lineStrong = Color(0x33221E17),
-    green = Color(0xFF0E6B43),
-    greenWash = Color(0x1A0E6B43),
-    onGreen = Color(0xFFF7F2E8),
-    amber = Color(0xFF96650A),
-    amberWash = Color(0x1F96650A),
-    violet = Color(0xFF5645C2),
-    violetWash = Color(0x1A5645C2),
-    fail = Color(0xFFB3391F),
-    failWash = Color(0x1AB3391F),
-    read = Color(0xFF2F5DA8),
-    dark = false,
-)
-
-fun darkCashflowColors() = CashflowColors(
-    paper = Color(0xFF14120D),
-    raise = Color(0xFF1D1A13),
-    sop = Color(0xFF26221A),
-    inset = Color(0xFF0F0D08),
-    ink = Color(0xFFF0EBE0),
-    ink2 = Color(0xFFBBB3A2),
-    ink3 = Color(0xFF9F9788),
-    ink4 = Color(0xFF6E675B),
-    line = Color(0x1FF0EBE0),
-    lineSoft = Color(0x12F0EBE0),
-    lineStrong = Color(0x38F0EBE0),
-    green = Color(0xFF3FA372),
-    greenWash = Color(0x293FA372),
-    onGreen = Color(0xFF14120D),
-    amber = Color(0xFFD9A441),
-    amberWash = Color(0x29D9A441),
-    violet = Color(0xFF9A8BE8),
-    violetWash = Color(0x299A8BE8),
-    fail = Color(0xFFE57157),
-    failWash = Color(0x29E57157),
-    read = Color(0xFF7FA3DE),
+fun nightCashflowColors() = CashflowColors(
+    bg = Color(0xFF101213),
+    surface = Color(0xFF1A1D1E),
+    sheet = Color(0xFF1A1D1E),
+    field = Color(0xFF262B2C),
+    fieldSoft = Color(0xFF16191A),
+    ink = Color(0xFFF5F4EE),
+    ink2 = Color(0xFFC9CDC9),
+    muted = Color(0xFFA0A7A6),
+    faint = Color(0xFF5E666B),
+    hairline = Color(0x0EF5F4EE),
+    line = Color(0x17F5F4EE),
+    lineStrong = Color(0x38F5F4EE),
+    citron = Color(0xFFE1F58C),
+    citronWash = Color(0x1AE1F58C),
+    onCitron = Color(0xFF1B2405),
+    lavender = Color(0xFFB7A9E8),
+    lavenderWash = Color(0x29B7A9E8),
+    red = Color(0xFFF08578),
+    redWash = Color(0x29F08578),
     dark = true,
 )
 
-val LocalCashflowColors = staticCompositionLocalOf { lightCashflowColors() }
+@Deprecated("Renamed for the night-current palette; use nightCashflowColors().")
+fun lightCashflowColors() = nightCashflowColors()
 
-/** CashflowShapes: small 8dp chips/inputs, medium 16dp cards/rows, large 24dp sheets. */
+val LocalCashflowColors = staticCompositionLocalOf { nightCashflowColors() }
+
+/** CashflowShapes: 12dp controls, 14dp fields, 16dp cards, 22dp stages, 26dp dock & sheets. */
 val CashflowShapes = Shapes(
-    extraSmall = RoundedCornerShape(6.dp),
-    small = RoundedCornerShape(8.dp),
+    extraSmall = RoundedCornerShape(10.dp),
+    small = RoundedCornerShape(12.dp),
     medium = RoundedCornerShape(16.dp),
-    large = RoundedCornerShape(24.dp),
-    extraLarge = RoundedCornerShape(28.dp),
+    large = RoundedCornerShape(22.dp),
+    extraLarge = RoundedCornerShape(26.dp),
 )
 
 /*
- * Type roles (plan):
- *  - Voice: human wording, headings and empty-state lines; never money.
- *  - Ledger: every amount, list rows, dates, statuses. Tabular figures on.
- *  - Reference (Mono): IDs and evidence only, nothing prose-like.
- *
- * Bundled fonts arrive with the resource phase; these roles use the platform
- * family for now and swap to the bundled Ledger/Voice faces with no call-site
- * changes. `tnum` keeps amount columns aligned in the mean time.
+ * Type roles:
+ *  - Voice: human wording — headings, sentences, empty states; never money.
+ *  - Ledger: every amount, figure, row; tabular figures always.
+ *  - Reference (mono): evidence text and IDs only, never prose.
+ * Bundled faces arrive with the resource phase; the platform family stands in.
  */
 object CamelType {
     val Ledger = FontFamily.SansSerif
@@ -136,96 +114,147 @@ object CamelType {
     val Mono = FontFamily.Monospace
 
     val VoiceHeadline = TextStyle(
-        fontFamily = Voice, fontWeight = FontWeight.SemiBold, fontSize = 26.sp, lineHeight = 32.sp,
+        fontFamily = Voice, fontWeight = FontWeight.SemiBold, fontSize = 24.sp, lineHeight = 30.sp,
+        letterSpacing = (-0.4).sp,
+    )
+    /** 1.35rem hero used on the intro screen. */
+    val VoiceHero = TextStyle(
+        fontFamily = Voice, fontWeight = FontWeight.SemiBold, fontSize = 22.sp, lineHeight = 28.sp,
+        letterSpacing = (-0.3).sp,
     )
     val VoiceTitle = TextStyle(
         fontFamily = Voice, fontWeight = FontWeight.SemiBold, fontSize = 20.sp, lineHeight = 25.sp,
+        letterSpacing = (-0.2).sp,
     )
     val VoiceBody = TextStyle(
         fontFamily = Voice, fontWeight = FontWeight.Medium, fontSize = 16.sp, lineHeight = 23.sp,
     )
+    /**
+     * Feed-row lead: 1.02rem, weight 650, tiny tight tracking — the name row
+     * of the feed.
+     */
+    val RowLead = TextStyle(
+        fontFamily = Voice, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, lineHeight = 22.sp,
+        letterSpacing = (-0.2).sp,
+    )
+    /** Amount display for the focused Review question: 2.1rem, weight 750. */
+    val LedgerStage = TextStyle(
+        fontFamily = Ledger, fontWeight = FontWeight.Bold, fontSize = 34.sp, lineHeight = 40.sp,
+        letterSpacing = (-1.0).sp, fontFeatureSettings = "tnum",
+    )
+    /** The Add-calculator hero: 3.4rem tabular, tight tracking. */
     val LedgerDisplay = TextStyle(
-        fontFamily = Ledger, fontWeight = FontWeight.Medium, fontSize = 44.sp, lineHeight = 50.sp,
-        fontFeatureSettings = "tnum",
+        fontFamily = Ledger, fontWeight = FontWeight.Bold, fontSize = 52.sp, lineHeight = 56.sp,
+        letterSpacing = (-2.0).sp, fontFeatureSettings = "tnum",
+    )
+    /** Tile values for the In/Out pair: 1.05rem tabular, weight 700. */
+    val LedgerTile = TextStyle(
+        fontFamily = Ledger, fontWeight = FontWeight.Bold, fontSize = 18.sp, lineHeight = 24.sp,
+        letterSpacing = (-0.2).sp, fontFeatureSettings = "tnum",
+    )
+    /** Long tile values shrink instead of clipping — money is never truncated. */
+    val LedgerTileLong = TextStyle(
+        fontFamily = Ledger, fontWeight = FontWeight.Bold, fontSize = 15.sp, lineHeight = 20.sp,
+        letterSpacing = 0.sp, fontFeatureSettings = "tnum",
     )
     val LedgerAmount = TextStyle(
+        fontFamily = Ledger, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, lineHeight = 22.sp,
+        letterSpacing = (-0.2).sp, fontFeatureSettings = "tnum",
+    )
+    val LedgerInput = TextStyle(
         fontFamily = Ledger, fontWeight = FontWeight.Medium, fontSize = 18.sp, lineHeight = 24.sp,
         fontFeatureSettings = "tnum",
     )
-    val LedgerHero = TextStyle(
-        fontFamily = Ledger, fontWeight = FontWeight.Medium, fontSize = 34.sp, lineHeight = 40.sp,
-        fontFeatureSettings = "tnum",
-    )
-    val LedgerInput = TextStyle(
-        fontFamily = Ledger, fontWeight = FontWeight.Medium, fontSize = 26.sp, lineHeight = 34.sp,
-        fontFeatureSettings = "tnum",
-    )
     val LedgerBody = TextStyle(
-        fontFamily = Ledger, fontWeight = FontWeight.Normal, fontSize = 15.sp, lineHeight = 21.sp,
+        fontFamily = Ledger, fontWeight = FontWeight.Normal, fontSize = 14.sp, lineHeight = 20.sp,
         fontFeatureSettings = "tnum",
+    )
+    /** Tiny uppercase kicker labels over fields and tiles. */
+    val Kicker = TextStyle(
+        fontFamily = Voice, fontWeight = FontWeight.Bold, fontSize = 11.sp, lineHeight = 14.sp,
+        letterSpacing = 0.8.sp, fontFeatureSettings = "tnum",
+    )
+    /** Uppercase date-group headers: .74rem, weight 700, +.09em tracking. */
+    val GroupHeader = TextStyle(
+        fontFamily = Voice, fontWeight = FontWeight.Bold, fontSize = 12.sp, lineHeight = 15.sp,
+        letterSpacing = 1.0.sp, fontFeatureSettings = "tnum",
     )
     val LedgerLabel = TextStyle(
         fontFamily = Ledger, fontWeight = FontWeight.Medium, fontSize = 13.sp, lineHeight = 17.sp,
         fontFeatureSettings = "tnum",
     )
     val Reference = TextStyle(
-        fontFamily = Mono, fontWeight = FontWeight.Normal, fontSize = 12.sp, lineHeight = 16.sp,
+        fontFamily = Mono, fontWeight = FontWeight.Normal, fontSize = 12.sp, lineHeight = 17.sp,
     )
 }
 
-private fun CashflowColors.materialColors() = run {
-    val base = if (dark) {
-        androidx.compose.material3.darkColorScheme()
-    } else {
-        androidx.compose.material3.lightColorScheme()
-    }
-    base.copy(
-        primary = green,
-        onPrimary = onGreen,
-        primaryContainer = greenWash,
-        onPrimaryContainer = ink,
-        secondary = ink2,
-        onSecondary = paper,
-        secondaryContainer = violetWash,
-        onSecondaryContainer = ink,
-        tertiary = violet,
-        onTertiary = paper,
-        tertiaryContainer = violetWash,
-        onTertiaryContainer = ink,
-        background = paper,
-        onBackground = ink,
-        surface = paper,
-        onSurface = ink,
-        surfaceVariant = raise,
-        onSurfaceVariant = ink2,
-        surfaceContainerLowest = paper,
-        surfaceContainerLow = paper,
-        surfaceContainer = raise,
-        surfaceContainerHigh = raise,
-        surfaceContainerHighest = sop,
-        surfaceDim = paper,
-        surfaceBright = raise,
-        inverseSurface = ink,
-        inverseOnSurface = paper,
-        inversePrimary = green,
-        error = fail,
-        onError = paper,
-        errorContainer = failWash,
-        onErrorContainer = ink,
-        outline = lineStrong,
-        outlineVariant = line,
-        scrim = if (dark) Color(0x66000000) else Color(0x66221E17),
-    )
+/** Restrained motion timings; the scale is fixed milliseconds, never distance-based. */
+@Immutable
+data class Motion(val reduced: Boolean) {
+    val none: Int get() = 0
+    /** 160ms micro-interactions (chips, icon buttons). */
+    val fast: Int get() = if (reduced) 0 else 160
+    /** ~200ms screen fades. */
+    val med: Int get() = if (reduced) 0 else 200
+    /** 220ms sheet entrances. */
+    val slow: Int get() = if (reduced) 0 else 220
 }
 
-/** CashflowTheme: the one theme for the app; dark mode flips the same token set. */
-@androidx.compose.runtime.Composable
+val LocalMotion = staticCompositionLocalOf { Motion(reduced = false) }
+
+private fun CashflowColors.materialColors() = darkColorScheme().copy(
+    primary = citron,
+    onPrimary = onCitron,
+    primaryContainer = citronWash,
+    onPrimaryContainer = ink,
+    secondary = muted,
+    onSecondary = bg,
+    secondaryContainer = lavenderWash,
+    onSecondaryContainer = ink,
+    tertiary = lavender,
+    onTertiary = Color(0xFF191327),
+    tertiaryContainer = lavenderWash,
+    onTertiaryContainer = ink,
+    background = bg,
+    onBackground = ink,
+    surface = bg,
+    onSurface = ink,
+    surfaceVariant = surface,
+    onSurfaceVariant = muted,
+    surfaceContainerLowest = bg,
+    surfaceContainerLow = bg,
+    surfaceContainer = surface,
+    surfaceContainerHigh = surface,
+    surfaceContainerHighest = sheet,
+    surfaceDim = bg,
+    surfaceBright = surface,
+    inverseSurface = ink,
+    inverseOnSurface = bg,
+    inversePrimary = citron,
+    error = red,
+    onError = Color(0xFF191327),
+    errorContainer = redWash,
+    onErrorContainer = ink,
+    outline = lineStrong,
+    outlineVariant = line,
+    scrim = Color(0x99060707),
+)
+
+/**
+ * CashflowTheme: the one theme; Cashflow is night-native, so no light variant
+ * is provided. [reduceMotion] is the honest, manual shaping of motion on top
+ * of any platform posture the caller already removed.
+ */
+@Composable
 fun CashflowTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    content: @androidx.compose.runtime.Composable () -> Unit,
+    reduceMotion: Boolean = false,
+    content: @Composable () -> Unit,
 ) {
-    val colors = if (darkTheme) darkCashflowColors() else lightCashflowColors()
-    CompositionLocalProvider(LocalCashflowColors provides colors) {
+    val colors = nightCashflowColors()
+    CompositionLocalProvider(
+        LocalCashflowColors provides colors,
+        LocalMotion provides Motion(reduceMotion),
+    ) {
         MaterialTheme(
             colorScheme = colors.materialColors(),
             typography = Typography(

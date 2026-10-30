@@ -34,7 +34,9 @@ class LedgerStore(driver: SqlDriver, private val platform: PlatformHooks) : Cash
         val selected = preferences.filter { it.key.startsWith("source:") && it.value == "true" }.keys.map { it.removePrefix("source:") }.toSet()
         mutableState.value = CashflowState(
             entries = queries.allEntries().executeAsList().map { json.decodeFromString<Entry>(it.payload) }.sortedByDescending { it.date },
-            review = queries.allEvents().executeAsList().mapNotNull { it.review_payload?.let { body -> json.decodeFromString<ReviewItem>(body) } },
+            review = queries.allEvents().executeAsList().filter { it.ignored == 0L }.mapNotNull { it.review_payload?.let { body -> json.decodeFromString<ReviewItem>(body) } },
+            ignoredReview = queries.allEvents().executeAsList().filter { it.ignored != 0L }.mapNotNull { it.review_payload?.let { body -> json.decodeFromString<ReviewItem>(body) } },
+            today = platform.now().take(10),
             onboardingComplete = preferences["onboarded"] == "true",
             onboardingStep = preferences["onboardingStep"]?.toIntOrNull() ?: 0,
             currency = preferences["currency"] ?: "NGN",
@@ -61,12 +63,16 @@ class LedgerStore(driver: SqlDriver, private val platform: PlatformHooks) : Cash
     private fun entry(id: String): Entry = state.value.entries.firstOrNull { it.id == id } ?: error("Entry no longer exists")
 
     override fun save(draft: EntryDraft, entryId: String?, reviewId: String?): String? = perform {
+        require(draft.directionConfirmed) { "Choose whether money came in or went out" }
+        require(entryId == null || reviewId == null) { "Choose an existing record or a review alert" }
+        require(reviewId == null || state.value.review.any { it.id == reviewId }) { "This alert is no longer waiting for review" }
         val amount = Money.parse(draft.amount, draft.currency) ?: throw IllegalArgumentException("Enter a positive amount with the right decimal places and a supported currency")
         require(draft.kind != Kind.INCOME || draft.direction == Direction.IN) { "Income must be money in. Choose a different kind for money out." }
         require(draft.kind !in listOf(Kind.EXPENSE, Kind.FEE) || draft.direction == Direction.OUT) { "Spending and fees must be money out. Choose a different kind for money in." }
         val date = draft.date.ifBlank { platform.now().take(10) }
         require(validDate(date)) { "Use a real date in YYYY-MM-DD format" }
         val old = entryId?.let { entry(it) }
+        require(old?.deleted != true) { "Restore this record before editing it" }
         val item = Entry(
             id = old?.id ?: platform.id(), amountMinor = amount, currency = draft.currency,
             direction = draft.direction, kind = draft.kind, status = draft.status,
@@ -87,7 +93,8 @@ class LedgerStore(driver: SqlDriver, private val platform: PlatformHooks) : Cash
         validateTotals(e)
         put(e)
     }
-    override fun ignoreReview(reviewId: String): String? = perform { queries.resolveEvent(null, 1, reviewId) }
+    override fun ignoreReview(reviewId: String): String? = perform { queries.setEventIgnored(1, reviewId) }
+    override fun restoreReview(reviewId: String): String? = perform { queries.setEventIgnored(0, reviewId) }
     override fun captureText(text: String, source: String): String? = ingest(text, source, platform.id(), respectPause = false)
 
     /** The delivery key identifies a posted event, not a guessed financial duplicate. */

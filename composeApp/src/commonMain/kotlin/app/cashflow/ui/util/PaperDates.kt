@@ -24,12 +24,11 @@ object PaperDates {
     }
 
     fun daysToCivil(days: Long): Triple<Int, Int, Int> {
-        var z = days + 719468
+        val z = days + 719468
         val era = (if (z >= 0) z else z - 146096) / 146097
-        z -= era * 146097
-        val doe = z - (365 * era + era / 4 - era / 100)
-        val yearOfEra = doe - doe / 1460 + doe / 36524 - doe / 146096
-        val y = yearOfEra / 365 * (1 - yearOfEra / 146096 / 2) + era
+        val doe = z - era * 146097
+        val yearOfEra = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365
+        val y = yearOfEra + era * 400
         val doy = doe - (365 * yearOfEra + yearOfEra / 4 - yearOfEra / 100)
         val mp = (5 * doy + 2) / 153
         val d = doy - (153 * mp + 2) / 5 + 1

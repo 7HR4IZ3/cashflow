@@ -35,6 +35,7 @@ data class EntryDraft(
     val account: String = "Unassigned",
     val note: String = "",
     val date: String = "",
+    val directionConfirmed: Boolean = true,
 )
 
 @Serializable
@@ -57,6 +58,8 @@ data class CaptureState(
 data class CashflowState(
     val entries: List<Entry> = emptyList(),
     val review: List<ReviewItem> = emptyList(),
+    val ignoredReview: List<ReviewItem> = emptyList(),
+    val today: String = "",
     val onboardingComplete: Boolean = false,
     val onboardingStep: Int = 0,
     val currency: String = "NGN",
@@ -73,6 +76,7 @@ interface CashflowActions {
     fun delete(entryId: String): String?
     fun restore(entryId: String): String?
     fun ignoreReview(reviewId: String): String?
+    fun restoreReview(reviewId: String): String?
     fun captureText(text: String, source: String = "Pasted text"): String?
     fun setCurrency(currency: String)
     fun setOnboardingStep(step: Int)

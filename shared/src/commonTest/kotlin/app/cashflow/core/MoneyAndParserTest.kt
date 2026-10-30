@@ -41,4 +41,14 @@ class MoneyAndParserTest {
         assertFalse(validDate("2026-02-29"))
         assertFalse(validDate("2026-04-31"))
     }
+    @Test fun unclearDirectionPreservesKnownAmountButNeverAssumesCurrency() {
+        val unclear = AlertParser.parse("USD 50 account activity", "NGN", "2026-10-27")
+        assertEquals("USD", unclear.draft!!.currency)
+        assertEquals("50", unclear.draft!!.amount)
+        assertFalse(unclear.draft!!.directionConfirmed)
+        assertNotNull(unclear.reason)
+        val missing = AlertParser.parse("You sent 50 to Ada", "NGN", "2026-10-27")
+        assertEquals("", missing.draft!!.currency)
+        assertNotNull(missing.reason)
+    }
 }

@@ -10,12 +10,12 @@ object AlertParser {
         if (authentication.containsMatchIn(text)) return ParsedAlert(null, null, irrelevant = true)
         val inWords = Regex("(?i)\\b(credited|received|credit alert|deposit received)\\b").containsMatchIn(text)
         val outWords = Regex("(?i)\\b(debited|sent|paid|debit alert|payment to)\\b").containsMatchIn(text)
-        val draft = EntryDraft(currency = currency, date = today, note = "")
+        val draft = EntryDraft(currency = "", date = today, note = "", kind = Kind.UNCLASSIFIED)
         val amounts = currencyAmount.findAll(text).toList()
         if (!inWords && !outWords && amounts.isEmpty()) return ParsedAlert(null, null, irrelevant = true)
-        if (inWords == outWords) return ParsedAlert(draft, "Check whether money came in or went out")
+        val directionKnown = inWords != outWords
         val direction = if (inWords) Direction.IN else Direction.OUT
-        val base = draft.copy(direction = direction, kind = Kind.UNCLASSIFIED)
+        val base = draft.copy(direction = direction, directionConfirmed = directionKnown, kind = Kind.UNCLASSIFIED)
         if (amounts.size != 1) return ParsedAlert(base, if (amounts.isEmpty()) "Amount or currency missing" else "Several amounts appear in this alert")
         val match = amounts.single()
         val code = when (val raw = match.groupValues[1].uppercase()) { "₦" -> "NGN"; "£" -> "GBP"; "€" -> "EUR"; else -> raw }
@@ -40,6 +40,7 @@ object AlertParser {
         // Broad text support is useful for review, but only explicit debit/credit alerts auto-record.
         val explicit = Regex("(?i)\\b(debited|credited|debit alert|credit alert)\\b").containsMatchIn(text)
         return ParsedAlert(result, when {
+            !directionKnown -> "Check whether money came in or went out"
             reversal -> "Link this refund or reversal to its original payment"
             !explicit -> "Confirm the payment details"
             else -> null

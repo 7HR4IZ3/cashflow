@@ -5,6 +5,40 @@ import app.cashflow.db.LedgerDatabase
 import kotlin.test.*
 
 class LedgerStoreTest {
+    @Test fun ignoredAlertsSurviveRecreationAndRestoreOnce() {
+        val (store, driver, hooks) = fixture()
+        store.captureText("USD 50 sent to Ada")
+        val item = store.state.value.review.single()
+        assertNull(store.ignoreReview(item.id))
+        val reloaded = LedgerStore(driver, hooks)
+        assertTrue(reloaded.state.value.review.isEmpty())
+        assertEquals(item, reloaded.state.value.ignoredReview.single())
+        assertNull(reloaded.restoreReview(item.id))
+        assertNull(reloaded.restoreReview(item.id))
+        assertEquals(listOf(item), reloaded.state.value.review)
+        assertTrue(reloaded.state.value.ignoredReview.isEmpty())
+        assertNull(reloaded.save(item.draft, reviewId = item.id))
+        assertNotNull(reloaded.save(item.draft, reviewId = item.id))
+        assertNull(reloaded.restoreReview(item.id))
+        assertEquals(1, reloaded.state.value.entries.size)
+        assertTrue(reloaded.state.value.review.isEmpty())
+        driver.close()
+    }
+
+    @Test fun uncertainFactsCannotBeSilentlyAccepted() {
+        val (store, driver) = fixture()
+        store.captureText("USD 50 account activity")
+        val item = store.state.value.review.single()
+        assertFalse(item.draft.directionConfirmed)
+        assertNotNull(store.save(item.draft.copy(amount = "50", currency = "USD"), reviewId = item.id))
+        assertNull(store.save(item.draft.copy(amount = "50", currency = "USD", directionConfirmed = true), reviewId = item.id))
+        val id = store.state.value.entries.single().id
+        store.delete(id)
+        assertNotNull(store.save(EntryDraft(amount = "60"), entryId = id))
+        assertTrue(store.state.value.entries.single().deleted)
+        assertEquals("2026-10-25", store.state.value.today)
+        driver.close()
+    }
     private class Hooks : PlatformHooks {
         var next = 0
         var notifications = 0
