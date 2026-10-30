@@ -29,6 +29,8 @@ import androidx.compose.ui.unit.dp
 import app.cashflow.core.CashflowActions
 import app.cashflow.core.CashflowState
 import app.cashflow.core.Money
+import app.cashflow.core.SourceApp
+import app.cashflow.ui.components.AppGrid
 import app.cashflow.ui.components.ActionButton
 import app.cashflow.ui.components.CFIcons
 import app.cashflow.ui.components.CurrencyGlyphPicker
@@ -48,6 +50,7 @@ private enum class SettingsPage(val title: String) {
     MAIN("Settings"),
     LEGEND("Icon legend"),
     CAPTURE("Capture setup"),
+    APPS("Apps to watch"),
     PASTE("Paste an alert"),
     RECOVERY("Recovery"),
 }
@@ -83,7 +86,8 @@ internal fun SettingsSheet(
                 open = { page = it },
             )
             SettingsPage.LEGEND -> LegendPage()
-            SettingsPage.CAPTURE -> CapturePage(state, actions)
+            SettingsPage.CAPTURE -> CapturePage(state, actions, openApps = { page = SettingsPage.APPS })
+            SettingsPage.APPS -> AppsPage(state, actions)
             SettingsPage.PASTE -> PastePage(actions, onToast, onDone = { page = SettingsPage.MAIN })
             SettingsPage.RECOVERY -> RecoveryPage(state, actions, onToast)
         }
@@ -176,7 +180,7 @@ internal fun CaptureGuideBody(state: CashflowState, actions: CashflowActions) {
     val c = LocalCashflowColors.current
     if (state.capture.platform == "Android") {
         GuideLine("1", "Open capture access and allow Cashflow to read notifications.")
-        GuideLine("2", "Pick the banking apps to watch below.")
+        GuideLine("2", "Choose the banking apps to watch under Apps to watch.")
         GuideLine("3", "Clear debit or credit alerts are recorded; unsure ones wait in Review.")
         Spacer(Modifier.height(6.dp))
         Text(
@@ -211,7 +215,7 @@ private fun GuideLine(n: String, text: String) {
 }
 
 @Composable
-private fun CapturePage(state: CashflowState, actions: CashflowActions) {
+private fun CapturePage(state: CashflowState, actions: CashflowActions, openApps: () -> Unit) {
     val c = LocalCashflowColors.current
     CaptureGuideBody(state, actions)
     Spacer(Modifier.height(10.dp))
@@ -222,10 +226,12 @@ private fun CapturePage(state: CashflowState, actions: CashflowActions) {
         state.capturePaused, actions::setCapturePaused,
     )
     if (state.capture.sources.isNotEmpty()) {
-        Kicker("Apps to watch", modifier = Modifier.padding(top = 8.dp))
-        state.capture.sources.forEach { s ->
-            ToggleRow(s.name, null, s.selected, { actions.selectSource(s.id, it) })
-        }
+        val watching = state.capture.sources.count { it.selected }
+        SettingRow(
+            Icons.Outlined.Settings, "Apps to watch",
+            value = if (watching == 0) "None chosen yet" else "$watching watching",
+            onClick = openApps,
+        )
     }
     Text(
         state.capture.lastReceived?.let { "Last alert received: $it" } ?: "No alert received yet.",
@@ -233,6 +239,33 @@ private fun CapturePage(state: CashflowState, actions: CashflowActions) {
     )
     Spacer(Modifier.height(8.dp))
     GhostButton("Refresh status", { actions.refreshCapture() }, Modifier.fillMaxWidth())
+}
+
+@Composable
+private fun AppsPage(state: CashflowState, actions: CashflowActions) {
+    val c = LocalCashflowColors.current
+    var query by remember { mutableStateOf("") }
+    val all = state.capture.sources
+    val shown = all.filter { query.isBlank() || it.name.contains(query.trim(), ignoreCase = true) }
+    val watching = shown.filter { it.selected }
+    val rest = shown.filterNot { it.selected }
+    val toggle: (SourceApp, Boolean) -> Unit = { app, on -> actions.selectSource(app.id, on) }
+    Text("Tap an app to watch its alerts.", style = CamelType.LedgerLabel, color = c.muted)
+    Spacer(Modifier.height(8.dp))
+    PaperField(value = query, onValueChange = { query = it }, placeholder = "Search apps")
+    Spacer(Modifier.height(10.dp))
+    if (watching.isNotEmpty()) {
+        Kicker("Watching · ${all.count { it.selected }}")
+        Spacer(Modifier.height(6.dp))
+        AppGrid(watching, toggle)
+        Spacer(Modifier.height(14.dp))
+    }
+    if (rest.isNotEmpty()) {
+        Kicker("All apps")
+        Spacer(Modifier.height(6.dp))
+        AppGrid(rest, toggle)
+    }
+    if (shown.isEmpty()) Text("No app matches.", style = CamelType.LedgerLabel, color = c.muted)
 }
 
 @Composable
