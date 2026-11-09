@@ -8,13 +8,19 @@
 
 /* Begin PBXBuildFile section */
 		29AC3E5792188EA3926D9368 /* CashflowApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E95D5949CCB4DEA2C970D07 /* CashflowApp.swift */; };
+		2C07F7B4599053567B8D015B /* SetupGuidePiP.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE490E63BFA302EDA1FB6FE8 /* SetupGuidePiP.swift */; };
 		D9914C34879913CA2786B300 /* CaptureTransactionIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF2CBEEA5207A56500D3129A /* CaptureTransactionIntent.swift */; };
+		E5ECF374C74E634F90C18F96 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 420847885186BE125C7DE757 /* Assets.xcassets */; };
+		F7A2F9056507CD87DEF2D3CF /* Capture transaction notification.shortcut in Resources */ = {isa = PBXBuildFile; fileRef = 2B9FBE50BE59CF1C48A89849 /* Capture transaction notification.shortcut */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		2B9FBE50BE59CF1C48A89849 /* Capture transaction notification.shortcut */ = {isa = PBXFileReference; path = "Capture transaction notification.shortcut"; sourceTree = "<group>"; };
+		420847885186BE125C7DE757 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		9E95D5949CCB4DEA2C970D07 /* CashflowApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashflowApp.swift; sourceTree = "<group>"; };
 		DF2CBEEA5207A56500D3129A /* CaptureTransactionIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureTransactionIntent.swift; sourceTree = "<group>"; };
 		ECDF5532177CE790D19F0FD6 /* Cashflow.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Cashflow.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		FE490E63BFA302EDA1FB6FE8 /* SetupGuidePiP.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupGuidePiP.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -37,8 +43,11 @@
 		DFE2A9FACD02F26D3E85BE61 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				420847885186BE125C7DE757 /* Assets.xcassets */,
+				2B9FBE50BE59CF1C48A89849 /* Capture transaction notification.shortcut */,
 				DF2CBEEA5207A56500D3129A /* CaptureTransactionIntent.swift */,
 				9E95D5949CCB4DEA2C970D07 /* CashflowApp.swift */,
+				FE490E63BFA302EDA1FB6FE8 /* SetupGuidePiP.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -52,6 +61,7 @@
 			buildPhases = (
 				88F627F4BCE3304AC4CA5190 /* Build Kotlin framework */,
 				1CC9013D0808B5CFE8E3B4F1 /* Sources */,
+				5964A805B89DD9FDBC33C3DD /* Resources */,
 			);
 			buildRules = (
 			);
@@ -94,6 +104,18 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		5964A805B89DD9FDBC33C3DD /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E5ECF374C74E634F90C18F96 /* Assets.xcassets in Resources */,
+				F7A2F9056507CD87DEF2D3CF /* Capture transaction notification.shortcut in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXShellScriptBuildPhase section */
 		88F627F4BCE3304AC4CA5190 /* Build Kotlin framework */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -123,6 +145,7 @@
 			files = (
 				D9914C34879913CA2786B300 /* CaptureTransactionIntent.swift in Sources */,
 				29AC3E5792188EA3926D9368 /* CashflowApp.swift in Sources */,
+				2C07F7B4599053567B8D015B /* SetupGuidePiP.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -261,6 +284,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Cashflow;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -284,6 +308,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Cashflow;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

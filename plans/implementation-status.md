@@ -34,3 +34,7 @@ Ten JVM tests pass, including classification and aggregate-overflow validation. 
 - Store packaging, icons, accessibility/device coverage, and release privacy disclosures.
 
 Do not describe the first draft as the full planned release until those gaps are implemented and checked. A successful App Intent build does not establish automatic notification capture.
+
+## Accounts, goals and insights (2026-11-01)
+
+Shared logic, UI and Android nudges are implemented per [the spec](accounts-goals-insights-spec.md#implementation-status). Core behaviour is covered by JVM tests; the Android debug build compiles. Not run on a device, not built for iOS, and no categories, paid limits or notification action buttons yet.

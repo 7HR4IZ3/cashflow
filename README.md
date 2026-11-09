@@ -44,3 +44,9 @@ Start with the [first-draft overview](plans/README.md) and [Night current concep
 - This app is independent of the neighbouring portfolio apps. Do not reuse their package identities, permission grants, credentials, release configuration, or databases.
 
 Start with the capture feasibility gates in the delivery plan before promising automatic capture on a particular iOS version.
+
+## Plans and optional AI
+
+The next implementation adds Free, Lite and Premium, with 2, 5 and unlimited watched apps. Local transactions, export and Recovery remain unlimited. Lite includes 300 AI-assisted alerts per UTC month; Premium includes 3,000. AI consent and automatic help both default off. Jev's suggestions remain in Review until confirmed.
+
+See [plan policy](plans/monetization-plan.md) and [Convex setup](backend/README.md). Credentials, Play products and licensed billing tests are still required before enabling checkout or distributing the AI build.

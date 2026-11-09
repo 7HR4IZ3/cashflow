@@ -335,11 +335,12 @@ private fun CurrencyOptionRow(
                 color = if (selected) c.citron else c.ink,
                 modifier = Modifier.weight(1f),
             )
+            Spacer(Modifier.width(12.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = symbolWord ?: "",
                     style = CamelType.VoiceBody,
-                    color = if (selected) c.onCitron else c.muted,
+                    color = if (selected) c.citron else c.muted,
                 )
             }
         }

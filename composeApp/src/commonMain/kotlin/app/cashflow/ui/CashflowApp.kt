@@ -73,6 +73,7 @@ fun CashflowApp(state: CashflowState, actions: CashflowActions) {
         var reviewOpen by rememberSaveable { mutableStateOf(false) }
         val latestState by rememberUpdatedState(state)
         var settingsOpen by rememberSaveable { mutableStateOf(false) }
+        var settingsGoals by rememberSaveable { mutableStateOf(false) }
         var replayStep by remember { mutableStateOf<Int?>(null) }
         var toast by remember { mutableStateOf<ToastMsg?>(null) }
 
@@ -129,7 +130,7 @@ fun CashflowApp(state: CashflowState, actions: CashflowActions) {
             return@CashflowTheme
         }
 
-        val anyOverlay = editor != null || reviewOpen || settingsOpen || detailId != null
+        val anyOverlay = editor != null || settingsOpen || detailId != null
 
         Box(Modifier.fillMaxSize().background(c.bg)) {
             HomeScreen(
@@ -137,18 +138,10 @@ fun CashflowApp(state: CashflowState, actions: CashflowActions) {
                 listState = listState,
                 onSetCurrency = actions::setCurrency,
                 onOpen = { detailId = it },
-                onSettings = { settingsOpen = true },
+                onSettings = { settingsGoals = false; settingsOpen = true },
+                actions = actions,
+                onGoals = { settingsGoals = true; settingsOpen = true },
             )
-
-            if (!anyOverlay) {
-                Dock(
-                    reviewCount = state.review.size,
-                    onHome = { scope.launch { listState.animateScrollToItem(0) } },
-                    onAdd = { editor = EditorRoute(EntryDraft(currency = state.currency), null, null) },
-                    onReview = { reviewOpen = true },
-                    modifier = Modifier.align(Alignment.BottomCenter),
-                )
-            }
 
             if (reviewOpen) {
                 Box(Modifier.fillMaxSize().background(c.bg).safeDrawingPadding()) {
@@ -160,10 +153,30 @@ fun CashflowApp(state: CashflowState, actions: CashflowActions) {
                 }
             }
 
+            if (!anyOverlay) {
+                // A soft fade under the dock so feed rows dissolve instead of colliding with it.
+                Box(
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .height(150.dp)
+                        .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(androidx.compose.ui.graphics.Color.Transparent, c.bg.copy(alpha = 0.92f), c.bg))),
+                )
+                Dock(
+                    reviewCount = state.review.size,
+                    reviewActive = reviewOpen,
+                    onHome = { if (reviewOpen) reviewOpen = false else scope.launch { listState.animateScrollToItem(0) } },
+                    onAdd = { editor = EditorRoute(EntryDraft(currency = state.currency), null, null) },
+                    onReview = { reviewOpen = true },
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                )
+            }
+
             detailId?.let { id ->
                 state.entries.firstOrNull { it.id == id && !it.deleted }?.let { entry ->
                     EntryDetailSheet(
                         entry = entry,
+                        state = state,
                         actions = actions,
                         onEdit = { editor = EditorRoute(draftFromEntry(entry), entry.id, null) },
                         onBack = { detailId = null },
@@ -180,6 +193,7 @@ fun CashflowApp(state: CashflowState, actions: CashflowActions) {
                     onReplayIntro = { settingsOpen = false; replayStep = 0 },
                     onToast = { toast = ToastMsg(it) },
                     onDismiss = { settingsOpen = false },
+                    startAtGoals = settingsGoals,
                 )
             }
 
@@ -238,11 +252,12 @@ private fun draftFromEntry(e: Entry) = EntryDraft(
 /**
  * Icon-only floating dock: Home left, citron Add at the geometric center
  * (three equal columns), Review tray with count badge right. The active
- * destination is a citron glyph with an under-dot, never a box.
+ * destination is simply a citron glyph; inactive ones are muted. No dot, no box.
  */
 @Composable
 private fun Dock(
     reviewCount: Int,
+    reviewActive: Boolean,
     onHome: () -> Unit,
     onAdd: () -> Unit,
     onReview: () -> Unit,
@@ -261,7 +276,7 @@ private fun Dock(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         DockSlot(Modifier.weight(1f)) {
-            DockButton(Icons.Outlined.Home, "Home, current page", active = true, onClick = onHome)
+            DockButton(Icons.Outlined.Home, if (reviewActive) "Home" else "Home, current page", active = !reviewActive, onClick = onHome)
         }
         DockSlot(Modifier.weight(1f)) {
             Box(
@@ -279,8 +294,8 @@ private fun Dock(
         DockSlot(Modifier.weight(1f)) {
             DockButton(
                 CFIcons.Tray,
-                if (reviewCount > 0) "Review, $reviewCount waiting" else "Review, nothing waiting",
-                active = false, count = reviewCount, onClick = onReview,
+                (if (reviewCount > 0) "Review, $reviewCount waiting" else "Review, nothing waiting") + if (reviewActive) ", current page" else "",
+                active = reviewActive, count = reviewCount, onClick = onReview,
             )
         }
     }
@@ -310,13 +325,9 @@ private fun DockButton(
         verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
     ) {
         Box {
-            Icon(icon, null, tint = if (active) c.citron else c.muted, modifier = Modifier.size(24.dp).padding(0.dp))
+            Icon(icon, null, tint = if (active) c.citron else c.muted, modifier = Modifier.size(26.dp))
             if (count > 0) CountBadge(count, Modifier.align(Alignment.TopEnd).padding(start = 14.dp))
         }
-        Box(
-            Modifier.padding(top = 4.dp).size(4.dp).clip(CircleShape)
-                .background(if (active) c.citron else androidx.compose.ui.graphics.Color.Transparent),
-        )
     }
 }
 

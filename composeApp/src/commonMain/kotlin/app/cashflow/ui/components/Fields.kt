@@ -19,6 +19,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -45,6 +47,8 @@ fun PaperField(
     minLines: Int = 1,
     keyboardOptions: KeyboardOptions? = null,
     textStyle: TextStyle? = null,
+    focusRequester: androidx.compose.ui.focus.FocusRequester? = null,
+    onFocusChange: ((Boolean) -> Unit)? = null,
 ) {
     val c = LocalCashflowColors.current
     Row(
@@ -67,7 +71,9 @@ fun PaperField(
         BasicTextField(
             value = value,
             onValueChange = onValueChange,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f)
+                .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
+                .then(if (onFocusChange != null) Modifier.onFocusChanged { onFocusChange(it.isFocused) } else Modifier),
             textStyle = (textStyle ?: CamelType.VoiceBody).copy(color = c.ink),
             cursorBrush = SolidColor(c.citron),
             singleLine = singleLine,
@@ -96,6 +102,7 @@ fun LabelledField(
     keyboardOptions: KeyboardOptions? = null,
     textStyle: TextStyle? = null,
     minLines: Int = 1,
+    onFocusChange: ((Boolean) -> Unit)? = null,
 ) {
     val c = LocalCashflowColors.current
     Column(
@@ -110,7 +117,7 @@ fun LabelledField(
         BasicTextField(
             value = value,
             onValueChange = onValueChange,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().then(if (onFocusChange != null) Modifier.onFocusChanged { onFocusChange(it.isFocused) } else Modifier),
             textStyle = (textStyle ?: CamelType.VoiceBody).copy(color = c.ink),
             cursorBrush = SolidColor(c.citron),
             singleLine = minLines == 1,

@@ -16,6 +16,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -67,6 +70,7 @@ fun FeedRow(
         if (entry.kind == Kind.UNCLASSIFIED) {
             append(". Not yet classified")
         }
+        append(". Source: ").append(entry.source)
     }
     Row(
         modifier = modifier
@@ -81,22 +85,29 @@ fun FeedRow(
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Text(
-                text = entry.counterparty.ifBlank { entry.note.ifBlank { if (isIn) "Money in" else "Money out" } },
+                text = tidy(entry.counterparty).ifBlank { entry.note.ifBlank { if (isIn) "Money in" else "Money out" } },
                 style = CamelType.RowLead,
                 color = c.ink,
-                maxLines = 2,
+                maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             val sub = feedSubline(entry)
-            if (sub.isNotBlank()) {
-                Text(
-                    text = sub,
-                    style = CamelType.LedgerBody,
-                    color = c.muted,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = 2.dp),
-                )
+            val unclassified = entry.kind == Kind.UNCLASSIFIED
+            if (sub.isNotBlank() || unclassified) {
+                Row(Modifier.padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                    // Lavender is the "needs a look" colour; one small marker instead of a word on every row.
+                    if (unclassified) {
+                        Box(Modifier.size(6.dp).background(c.lavender, CircleShape))
+                        Spacer(Modifier.width(6.dp))
+                    }
+                    Text(
+                        text = sub,
+                        style = CamelType.LedgerBody,
+                        color = c.muted,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
         Spacer(Modifier.width(8.dp))
@@ -127,49 +138,59 @@ private fun digits(minor: Long, currency: String): String =
     Money.display(minor, currency).removePrefix("$currency ")
 
 /**
- * The row's avatar: initials when a name exists, else the Cashflow mark. The
- * bottom-end citron dot rides only on incoming money — a second, non-color
- * cue next to the arrow.
+ * The row's avatar: initials when a name exists, else the Cashflow mark. A small badge at the bottom-end says
+ * where the record came from (the app's initial, a pencil for manual, a receipt for pasted text).
  */
 @Composable
 private fun Avatar(entry: Entry) {
     val c = LocalCashflowColors.current
     val isIn = entry.direction == Direction.IN
-    val initials = avatarInitials(entry.counterparty)
+    val initials = avatarInitials(tidy(entry.counterparty))
+    Box(Modifier.size(44.dp), contentAlignment = Alignment.TopStart) {
+        Box(
+            Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(if (isIn) c.citronWash else c.surface),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (initials != null) {
+                Text(text = initials, style = CamelType.RowLead, color = if (isIn) c.citron else c.ink)
+            } else {
+                Icon(imageVector = CFIcons.Mark, contentDescription = null, tint = c.muted, modifier = Modifier.size(17.dp))
+            }
+        }
+        SourceBadge(entry.source, Modifier.align(Alignment.BottomEnd))
+    }
+}
+
+/** Where a record came from, in a glance: the capturing app's initial, or an icon for hand-made records. */
+@Composable
+private fun SourceBadge(source: String, modifier: Modifier = Modifier) {
+    val c = LocalCashflowColors.current
     Box(
-        Modifier
-            .size(40.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(if (isIn) c.citronWash else c.surface),
+        modifier
+            .size(19.dp)
+            .background(c.bg, CircleShape)
+            .padding(1.5.dp)
+            .background(c.field, CircleShape),
         contentAlignment = Alignment.Center,
     ) {
-        if (initials != null) {
-            Text(
-                text = initials,
-                style = CamelType.RowLead,
-                color = if (isIn) c.citron else c.ink,
-            )
-        } else {
-            Icon(
-                imageVector = CFIcons.Mark,
-                contentDescription = null,
-                tint = c.muted,
-                modifier = Modifier.size(17.dp),
-            )
-        }
-        if (isIn) {
-            Box(
-                Modifier
-                    .align(Alignment.BottomEnd)
-                    .offset(x = 2.dp, y = 2.dp)
-                    .size(12.dp)
-                    .background(c.bg, CircleShape)
-                    .padding(2.dp)
-                    .background(c.citron, CircleShape),
+        when {
+            source.equals("Manual", ignoreCase = true) ->
+                Icon(Icons.Outlined.Edit, null, tint = c.muted, modifier = Modifier.size(10.dp))
+            source.equals("Pasted text", ignoreCase = true) ->
+                Icon(CFIcons.Receipt, null, tint = c.muted, modifier = Modifier.size(10.dp))
+            else -> Text(
+                text = source.trim().firstOrNull { it.isLetterOrDigit() }?.uppercaseChar()?.toString() ?: "•",
+                style = CamelType.Kicker.copy(fontSize = 9.sp, lineHeight = 10.sp, letterSpacing = 0.sp),
+                color = c.ink2,
             )
         }
     }
 }
+
+private fun tidy(name: String): String = app.cashflow.core.AlertParser.displayName(name)
 
 /** First letters of the first and last word; single word yields its initial. */
 private fun avatarInitials(counterparty: String): String? {
@@ -189,6 +210,7 @@ private fun avatarInitials(counterparty: String): String? {
  */
 private fun feedSubline(entry: Entry): String {
     val parts = buildList {
+        if (!entry.source.equals("Manual", ignoreCase = true) && entry.source.isNotBlank()) add(entry.source)
         if (!entry.account.isBlank() && !entry.account.equals("Unassigned", ignoreCase = true)) {
             add(entry.account)
         }
@@ -196,7 +218,6 @@ private fun feedSubline(entry: Entry): String {
             add(entry.note)
         }
         // Exception statuses only — completed, classified rows stay quiet.
-        if (entry.kind == Kind.UNCLASSIFIED) add("Unclassified")
         if (entry.status == PaymentStatus.PENDING) add("Pending")
         if (entry.status == PaymentStatus.FAILED) add("Failed")
     }

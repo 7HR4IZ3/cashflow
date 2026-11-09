@@ -3,6 +3,17 @@ package app.cashflow.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Create
+import androidx.compose.material.icons.outlined.DateRange
+import androidx.compose.material.icons.outlined.AccountBox
+import androidx.compose.material.icons.outlined.Warning
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.List
+import app.cashflow.ui.components.ActionButton
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.ui.draw.rotate
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -219,6 +230,10 @@ private fun CheckButton(description: String, enabled: Boolean, onClick: () -> Un
 // Add / Edit calculator
 // ---------------------------------------------------------------------------
 
+/**
+ * Add / edit. The fast path is always on screen: amount, in or out, who, when. Kind is one swipe away and
+ * everything else lives under "More details". The keypad gives way to the keyboard while a text field is focused.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun EntryEditorScreen(
@@ -231,6 +246,7 @@ internal fun EntryEditorScreen(
     onSaved: (savedEntryId: String?) -> Unit,
 ) {
     val c = LocalCashflowColors.current
+    val focus = androidx.compose.ui.platform.LocalFocusManager.current
     val editing = entryId != null
     var amount by remember { mutableStateOf(draft.amount.trim()) }
     var currency by remember {
@@ -243,28 +259,22 @@ internal fun EntryEditorScreen(
     var name by remember { mutableStateOf(draft.counterparty) }
     var note by remember { mutableStateOf(draft.note) }
     var date by remember { mutableStateOf(draft.date.ifBlank { state.today }) }
-    var details by remember { mutableStateOf(false) }
+    var more by remember { mutableStateOf(false) }
+    var typing by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
     val valid = amountProblem(amount, currency) == null
-    val context = if (editing && draft.counterparty.isNotBlank() && valid) {
-        "${draft.counterparty} · ${Money.display(Money.parse(amount.trimEnd('.'), currency) ?: 0L, currency)}"
-    } else if (editing) draft.counterparty.takeIf { it.isNotBlank() } else null
+    val todayNumber = PaperDates.dayNumber(state.today)
+    val yesterday = todayNumber?.let { PaperDates.daysToIso(it - 1) }
+    val subtitle = if (editing && draft.counterparty.isNotBlank()) draft.counterparty else null
 
     fun save() {
         val clean = amount.trim().trimEnd('.')
         val result = actions.save(
             draft.copy(
-                amount = clean,
-                currency = currency,
-                direction = direction,
-                kind = kind,
-                status = status,
-                counterparty = name,
-                account = account.ifBlank { "Unassigned" },
-                note = note,
-                date = date.trim(),
-                directionConfirmed = true,
+                amount = clean, currency = currency, direction = direction, kind = kind, status = status,
+                counterparty = name, account = account.ifBlank { "Unassigned" }, note = note,
+                date = date.trim(), directionConfirmed = true,
             ),
             entryId,
             reviewId,
@@ -279,111 +289,141 @@ internal fun EntryEditorScreen(
             .statusBarsPadding()
             .navigationBarsPadding()
             .imePadding()
-            .padding(horizontal = 14.dp),
+            .padding(horizontal = 16.dp),
     ) {
-        Row(
-            Modifier.fillMaxWidth().padding(top = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+        Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             TopIcon(Icons.Outlined.Close, "Cancel and close", onBack)
-            Column(Modifier.weight(1f).padding(horizontal = 6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    if (editing) "Edit record" else "Add record",
-                    style = CamelType.VoiceBody.copy(fontWeight = FontWeight.SemiBold),
-                    color = c.ink,
+                    if (editing) "Edit record" else "New record",
+                    style = CamelType.VoiceBody.copy(fontWeight = FontWeight.SemiBold), color = c.ink,
                 )
-                if (context != null) {
-                    Text(context, style = CamelType.LedgerLabel, color = c.muted, textAlign = TextAlign.Center)
-                } else if (!editing) {
-                    Text("Write it in your record book", style = CamelType.LedgerLabel, color = c.muted)
-                }
+                Text(subtitle ?: "Written by hand, never sent anywhere", style = CamelType.LedgerLabel, color = c.muted, maxLines = 1)
             }
-            TopIcon(
-                CFIcons.MoreDots,
-                if (details) "Hide details" else "Show details: kind, status, account, name, note, date",
-                { details = !details },
-                on = details,
-            )
+            Spacer(Modifier.size(44.dp))
         }
 
         Column(
             Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Spacer(Modifier.height(if (details) 8.dp else 20.dp))
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+            Spacer(Modifier.height(if (typing) 4.dp else 14.dp))
+            // Amount: tapping it always brings the keypad back.
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+            ) {
                 CurrencyGlyphPicker(selected = currency, onSelect = { it?.let { code -> currency = code; amount = amount.let { a -> if (Money.exponent(code) == 0) a.substringBefore('.') else a.substringBefore('.') + (if (a.contains('.')) "." + a.substringAfter('.').take(Money.exponent(code)) else "") } } })
                 Spacer(Modifier.width(10.dp))
                 Kicker(currency)
             }
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(6.dp))
             val shown = if (amount.isEmpty()) "0" else groupedAmount(amount)
-            val digitCount = shown.length
             val size = when {
-                digitCount <= 9 -> 52.sp
-                digitCount <= 12 -> 40.sp
-                digitCount <= 16 -> 32.sp
+                shown.length <= 9 -> 56.sp
+                shown.length <= 12 -> 42.sp
+                shown.length <= 16 -> 32.sp
                 else -> 26.sp
             }
             Text(
                 text = shown,
                 style = CamelType.LedgerDisplay.copy(fontSize = size, lineHeight = size * 1.1f),
-                color = if (amount.isEmpty()) c.faint else c.ink,
+                color = when {
+                    amount.isEmpty() -> c.faint
+                    direction == Direction.IN -> c.citron
+                    else -> c.ink
+                },
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .fillMaxWidth()
+                    .clickable(interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, indication = null) { focus.clearFocus(); typing = false }
                     .semantics { contentDescription = "Amount ${if (amount.isEmpty()) "zero" else shown} $currency" },
             )
             Spacer(Modifier.height(14.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                DirectionArrowButton(Direction.IN, direction == Direction.IN, {
-                    direction = Direction.IN; kind = kindAfterDirection(kind, Direction.IN)
-                }, Modifier.weight(1f))
-                DirectionArrowButton(Direction.OUT, direction == Direction.OUT, {
-                    direction = Direction.OUT; kind = kindAfterDirection(kind, Direction.OUT)
-                }, Modifier.weight(1f))
+
+            DirectionToggle(direction) { picked ->
+                direction = picked; kind = kindAfterDirection(kind, picked)
             }
 
-            if (details) {
-                Spacer(Modifier.height(16.dp))
-                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Kicker("Kind")
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Kind.values().forEach { k ->
-                            OptionChip(MoneyWords.kind(k), kind == k, {
-                                kind = k
-                                when (k) {
-                                    Kind.INCOME -> direction = Direction.IN
-                                    Kind.EXPENSE, Kind.FEE -> direction = Direction.OUT
-                                    else -> {}
-                                }
-                            })
-                        }
+            Spacer(Modifier.height(14.dp))
+            PaperField(
+                value = name,
+                onValueChange = { name = it },
+                placeholder = if (direction == Direction.IN) "Who paid you? (optional)" else "Who or what was it for? (optional)",
+                leading = Icons.Outlined.Person,
+                onFocusChange = { typing = it },
+            )
+
+            Spacer(Modifier.height(14.dp))
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Kicker("When")
+                Spacer(Modifier.width(12.dp))
+                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OptionChip("Today", date == state.today, { date = state.today })
+                    if (yesterday != null) OptionChip("Yesterday", date == yesterday, { date = yesterday })
+                    OptionChip(
+                        if (date != state.today && date != yesterday && PaperDates.dayNumber(date) != null) PaperDates.dateLabel(date) else "Pick a date",
+                        date != state.today && date != yesterday,
+                        { more = true },
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(10.dp))
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Kicker("Kind")
+                Spacer(Modifier.width(14.dp))
+                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Kind.values().forEach { k ->
+                        OptionChip(MoneyWords.kind(k), kind == k, {
+                            kind = k
+                            when (k) {
+                                Kind.INCOME -> direction = Direction.IN
+                                Kind.EXPENSE, Kind.FEE -> direction = Direction.OUT
+                                else -> {}
+                            }
+                        })
                     }
-                    MoneyWords.directionHint(kind)?.let { SideNote(it) }
+                }
+            }
+
+            Spacer(Modifier.height(6.dp))
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable { more = !more }
+                    .padding(vertical = 10.dp, horizontal = 2.dp)
+                    .semantics { contentDescription = if (more) "Hide more details" else "Show more details: status, account, note, exact date" },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("More details", style = CamelType.LedgerLabel, color = c.muted)
+                Spacer(Modifier.width(6.dp))
+                Icon(CFIcons.Caret, null, tint = c.muted, modifier = Modifier.size(10.dp).rotate(if (more) 180f else 0f))
+            }
+            if (more) {
+                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Kicker("Status")
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        PaymentStatus.values().forEach { s -> OptionChip(statusLabel(s), status == s, { status = s }) }
+                        PaymentStatus.values().forEach { st -> OptionChip(statusLabel(st), status == st, { status = st }) }
                     }
-                    LabelledField("Name", name, { name = it }, "Who or what was it for? (optional)")
-                    LabelledField("Account", account, { account = it }, "Unassigned")
-                    LabelledField("Note", note, { note = it }, "Optional note", minLines = 2)
+                    AccountChips(state, account) { account = it }
+                    LabelledField("Account", account, { account = it }, "Unassigned", onFocusChange = { typing = it })
+                    LabelledField("Note", note, { note = it }, "Optional note", minLines = 2, onFocusChange = { typing = it })
                     LabelledField(
                         "Date", date, { date = it }, "YYYY-MM-DD",
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        onFocusChange = { typing = it },
                     )
                     if (PaperDates.dayNumber(date) != null) SideNote(PaperDates.dateLabel(date))
                 }
                 Spacer(Modifier.height(10.dp))
             }
-            error?.let {
-                Spacer(Modifier.height(8.dp))
-                SideNote(it, color = c.red)
-            }
+            error?.let { Spacer(Modifier.height(8.dp)); SideNote(it, color = c.red) }
             Spacer(Modifier.height(8.dp))
         }
 
-        if (!details) {
+        if (!typing) {
             val rows = listOf(listOf("1", "2", "3"), listOf("4", "5", "6"), listOf("7", "8", "9"), listOf(".", "0", "<"))
             Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 6.dp)) {
                 rows.forEach { row ->
@@ -399,15 +439,47 @@ internal fun EntryEditorScreen(
             }
         }
         Spacer(Modifier.height(10.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
-            if (!valid && amount.isNotEmpty()) {
-                SideNote(amountProblem(amount, currency).orEmpty(), Modifier.weight(1f).padding(end = 12.dp))
-            } else {
-                Spacer(Modifier.weight(1f))
-            }
-            CheckButton(if (editing) "Save changes" else "Save record", valid, ::save)
+        if (!valid && amount.isNotEmpty()) {
+            SideNote(amountProblem(amount, currency).orEmpty(), Modifier.fillMaxWidth().padding(bottom = 6.dp))
         }
+        ActionButton(
+            label = if (editing) "Save changes" else if (amount.isEmpty()) "Enter an amount" else "Save record",
+            onClick = ::save, modifier = Modifier.fillMaxWidth(), enabled = valid, icon = CFIcons.CheckMark,
+        )
         Spacer(Modifier.height(10.dp))
+    }
+}
+
+/** In | Out as one pill: citron when money comes in, warm white when it goes out. Words and arrows, never colour alone. */
+@Composable
+private fun DirectionToggle(direction: Direction?, onPick: (Direction) -> Unit) {
+    val c = LocalCashflowColors.current
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(c.surface).padding(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        listOf(Direction.IN to "Money in", Direction.OUT to "Money out").forEach { (d, label) ->
+            val on = direction == d
+            val fill = if (d == Direction.IN) c.citron else c.ink2
+            Row(
+                Modifier
+                    .weight(1f)
+                    .heightIn(min = 48.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(if (on) fill else androidx.compose.ui.graphics.Color.Transparent)
+                    .clickable { onPick(d) }
+                    .semantics { contentDescription = label + if (on) ", selected" else "" },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                Icon(
+                    if (d == Direction.IN) CFIcons.ArrowIn else CFIcons.ArrowOut, null,
+                    tint = if (on) c.onCitron else c.muted, modifier = Modifier.size(18.dp),
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(label, style = CamelType.VoiceBody.copy(fontWeight = FontWeight.SemiBold), color = if (on) c.onCitron else c.muted)
+            }
+        }
     }
 }
 
@@ -418,6 +490,7 @@ internal fun EntryEditorScreen(
 @Composable
 internal fun EntryDetailSheet(
     entry: Entry,
+    state: CashflowState,
     actions: CashflowActions,
     onEdit: () -> Unit,
     onBack: () -> Unit,
@@ -428,20 +501,28 @@ internal fun EntryDetailSheet(
     var showOrigin by remember { mutableStateOf(false) }
     val isIn = entry.direction == Direction.IN
 
+    val name = app.cashflow.core.AlertParser.displayName(entry.counterparty).ifBlank { "Unnamed record" }
+    val initials = name.split(' ').filter { it.isNotBlank() }.let { w ->
+        if (entry.counterparty.isBlank()) null else buildString { append(w.first().first().uppercaseChar()); if (w.size > 1) append(w.last().first().uppercaseChar()) }
+    }
+
     SheetOverlay(onDismiss = onBack) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Kicker(if (isIn) "Money in" else "Money out")
-                Text(
-                    entry.counterparty.ifBlank { "Unnamed record" },
-                    style = CamelType.VoiceTitle, color = c.ink,
-                )
+            Box(
+                Modifier.size(46.dp).clip(RoundedCornerShape(15.dp)).background(if (isIn) c.citronWash else c.field),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (initials != null) Text(initials, style = CamelType.RowLead, color = if (isIn) c.citron else c.ink)
+                else Icon(if (isIn) CFIcons.ArrowIn else CFIcons.ArrowOut, null, tint = if (isIn) c.citron else c.muted, modifier = Modifier.size(22.dp))
             }
-            TopIcon(Icons.Outlined.Edit, "Edit this record", onEdit)
-            TopIcon(Icons.Outlined.Delete, "Delete this record", { confirm = true }, tint = c.red)
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(name, style = CamelType.VoiceTitle, color = c.ink, maxLines = 1)
+                Kicker(if (isIn) "Money in" else "Money out")
+            }
             TopIcon(Icons.Outlined.Close, "Close", onBack)
         }
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(16.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             AmountText(entry.amountMinor, entry.currency, direction = entry.direction, style = CamelType.LedgerStage)
             Spacer(Modifier.width(8.dp))
@@ -452,7 +533,7 @@ internal fun EntryDetailSheet(
                 modifier = Modifier.size(22.dp),
             )
         }
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(14.dp))
         if (confirm) {
             Column(
                 Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(c.redWash).padding(14.dp),
@@ -468,35 +549,59 @@ internal fun EntryDetailSheet(
                     GhostButton("Keep", { confirm = false }, Modifier.weight(1f))
                 }
             }
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(10.dp))
         }
-        error?.let { SideNote(it, color = c.red) }
-        KvRow("Kind", MoneyWords.kind(entry.kind))
-        KvRow("Status", MoneyWords.status(entry.status))
-        KvRow("Account", entry.account)
-        KvRow("Date", PaperDates.dateLabel(entry.date))
-        if (entry.note.isNotBlank()) KvRow("Note", entry.note)
-        Spacer(Modifier.height(6.dp))
-        Row(
-            Modifier
-                .clip(RoundedCornerShape(12.dp))
-                .clickable { showOrigin = !showOrigin }
-                .padding(vertical = 10.dp, horizontal = 4.dp)
-                .semantics { contentDescription = if (showOrigin) "Hide where this came from" else "Show where this came from" },
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(CFIcons.Receipt, contentDescription = null, tint = c.muted, modifier = Modifier.size(17.dp))
-            Spacer(Modifier.width(8.dp))
-            Text("Origin", style = CamelType.LedgerLabel, color = c.muted)
-        }
-        if (showOrigin) {
-            Text(
-                MoneyWords.origin(entry.source) + if (entry.userEdited) ". Edited by you." else ".",
-                style = CamelType.Reference, color = c.muted,
-                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(c.bg).padding(11.dp),
+        error?.let { SideNote(it, color = c.red); Spacer(Modifier.height(8.dp)) }
+
+        // Every fact is an icon, a label and a value, in one grouped card.
+        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(c.surface)) {
+            DetailFact(Icons.Outlined.List, "Kind", MoneyWords.kind(entry.kind))
+            DetailDivider()
+            DetailFact(
+                if (entry.status == PaymentStatus.COMPLETED) Icons.Outlined.CheckCircle else Icons.Outlined.Warning,
+                "Status", MoneyWords.status(entry.status),
+            )
+            DetailDivider()
+            DetailFact(Icons.Outlined.AccountBox, "Account", entry.account)
+            DetailDivider()
+            DetailFact(Icons.Outlined.DateRange, "Date", PaperDates.dateLabel(entry.date))
+            if (entry.note.isNotBlank()) {
+                DetailDivider()
+                DetailFact(Icons.Outlined.Create, "Note", entry.note)
+            }
+            DetailDivider()
+            DetailFact(
+                CFIcons.Receipt, "Origin",
+                MoneyWords.origin(entry.source) + if (entry.userEdited) ", edited by you" else "",
             )
         }
+        Spacer(Modifier.height(8.dp))
+        TransferSection(entry, state, actions, onError = { error = it })
+        Spacer(Modifier.height(16.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+            SetupButton("Edit", Icons.Outlined.Edit, onEdit, Modifier.weight(1f))
+            SetupButton("Delete", Icons.Outlined.Delete, { confirm = true }, filled = false, tint = c.red)
+        }
     }
+}
+
+@Composable
+private fun DetailFact(icon: ImageVector, label: String, value: String) {
+    val c = LocalCashflowColors.current
+    Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(32.dp).clip(RoundedCornerShape(10.dp)).background(c.field), contentAlignment = Alignment.Center) {
+            Icon(icon, null, tint = c.ink2, modifier = Modifier.size(17.dp))
+        }
+        Spacer(Modifier.width(12.dp))
+        Text(label, style = CamelType.LedgerLabel, color = c.muted, modifier = Modifier.width(66.dp))
+        Text(value, style = CamelType.VoiceBody, color = c.ink, modifier = Modifier.weight(1f))
+    }
+}
+
+@Composable
+private fun DetailDivider() {
+    val c = LocalCashflowColors.current
+    Box(Modifier.fillMaxWidth().padding(start = 58.dp).height(1.dp).background(c.hairline))
 }
 
 // ---------------------------------------------------------------------------
@@ -515,12 +620,20 @@ internal fun ReviewScreen(
     var index by remember { mutableStateOf(0) }
 
     if (items.isEmpty()) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            StateBlock(
-                headline = "Nothing to review",
-                sentence = "Alerts that need a human look will wait here.",
-                actions = { GhostButton("Close", onClose) },
-            )
+        Box(Modifier.fillMaxSize().padding(bottom = 90.dp), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Box(
+                    Modifier.size(64.dp).clip(RoundedCornerShape(22.dp)).background(c.citronWash),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(CFIcons.Tray, null, tint = c.citron, modifier = Modifier.size(30.dp))
+                }
+                Spacer(Modifier.height(14.dp))
+                StateBlock(
+                    headline = "All clear",
+                    sentence = "Alerts that need a human look will wait here.",
+                )
+            }
         }
         return
     }
@@ -542,18 +655,22 @@ internal fun ReviewScreen(
         key(item.id) {
             ReviewQuestion(
                 item = item,
+                state = state,
                 actions = actions,
                 lastOne = items.size <= 1,
                 onEdit = onEdit,
                 onClose = onClose,
             )
         }
+        // Room for the dock, which now stays on screen while Review is a tab.
+        Spacer(Modifier.height(130.dp))
     }
 }
 
 @Composable
 private fun ReviewQuestion(
     item: ReviewItem,
+    state: CashflowState,
     actions: CashflowActions,
     lastOne: Boolean,
     onEdit: (ReviewItem) -> Unit,
@@ -564,6 +681,7 @@ private fun ReviewQuestion(
     var amountText by remember { mutableStateOf(d.amount.trim()) }
     var currency by remember { mutableStateOf(if (MoneyWords.isSupported(d.currency)) d.currency.uppercase() else "") }
     var direction by remember { mutableStateOf(if (d.directionConfirmed) d.direction else null) }
+    var suggestedKind by remember { mutableStateOf(d.kind) }
     var editingAmount by remember { mutableStateOf(false) }
     var showAlert by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -578,21 +696,36 @@ private fun ReviewQuestion(
         currency = currency,
         direction = direction ?: d.direction,
         directionConfirmed = direction != null,
+        kind = suggestedKind,
     )
 
     fun finish() { if (lastOne) onClose() }
 
     Spacer(Modifier.height(10.dp))
-    Row(verticalAlignment = Alignment.Top) {
-        Column(Modifier.weight(1f)) {
-            Kicker(item.source)
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(c.lavenderWash), contentAlignment = Alignment.Center) {
             Text(
-                item.reason.ifBlank { "Check this alert" },
-                style = CamelType.VoiceTitle, color = c.ink,
-                modifier = Modifier.padding(top = 2.dp),
+                item.source.trim().firstOrNull { it.isLetterOrDigit() }?.uppercaseChar()?.toString() ?: "?",
+                style = CamelType.RowLead, color = c.lavender,
             )
         }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text("Check this alert", style = CamelType.VoiceTitle, color = c.ink)
+            Text(item.reason.ifBlank { "Needs a quick look" }, style = CamelType.LedgerLabel, color = c.lavender, maxLines = 2)
+        }
     }
+    Spacer(Modifier.height(14.dp))
+    // The alert itself is the evidence, so it is shown first. Tap to read all of it.
+    Text(
+        item.text,
+        style = CamelType.Reference, color = c.ink2,
+        maxLines = if (showAlert) Int.MAX_VALUE else 4,
+        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(c.surface)
+            .clickable { showAlert = !showAlert }.padding(14.dp)
+            .semantics { contentDescription = "Original alert: ${item.text}" },
+    )
     Spacer(Modifier.height(16.dp))
 
     // Amount + currency
@@ -632,39 +765,48 @@ private fun ReviewQuestion(
 
     // Direction
     Spacer(Modifier.height(18.dp))
-    Kicker("Did money come in or go out?")
-    Spacer(Modifier.height(8.dp))
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        DirectionArrowButton(Direction.IN, direction == Direction.IN, { direction = Direction.IN; error = null }, Modifier.weight(1f))
-        DirectionArrowButton(Direction.OUT, direction == Direction.OUT, { direction = Direction.OUT; error = null }, Modifier.weight(1f))
+    DirectionToggle(direction) { picked -> direction = picked; error = null }
+
+    if (state.aiEnabled && state.subscription.tier != app.cashflow.core.PlanTier.FREE) {
+        Spacer(Modifier.height(14.dp))
+        if (item.id in state.aiBusyIds) {
+            Text("Jev is checking this alert…", style = CamelType.LedgerLabel, color = c.muted)
+        } else {
+            GhostButton("Ask Jev", { error = actions.requestAi(item.id) }, Modifier.fillMaxWidth())
+        }
+    }
+    item.aiSuggestion?.let { suggestion ->
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "Jev suggests: ${suggestion.direction?.let { if (it == Direction.IN) "money in" else "money out" } ?: "direction unsure"}" +
+                (suggestion.kind?.let { " · ${it.name.lowercase()}" } ?: "") +
+                (if (suggestion.relevant == false) " · may not be a payment" else "") + ". Check the original before recording.",
+            style = CamelType.LedgerLabel, color = c.muted,
+        )
+        suggestion.kind?.let { kind ->
+            GhostButton("Use suggested kind", { suggestedKind = kind; error = null }, Modifier.fillMaxWidth())
+        }
+        suggestion.direction?.let { suggested ->
+            GhostButton("Use suggested direction", { direction = suggested; error = null }, Modifier.fillMaxWidth())
+        }
     }
 
-    // Controls
-    Spacer(Modifier.height(16.dp))
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        TopIcon(CFIcons.Receipt, if (showAlert) "Hide the original alert" else "Show the original alert", { showAlert = !showAlert }, on = showAlert)
-        TopIcon(CFIcons.MinusCircle, "Ignore this alert", {
+    // Controls: set aside, edit, or record.
+    Spacer(Modifier.height(18.dp))
+    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+        SetupIconButton(CFIcons.MinusCircle, "Ignore this alert", {
             val r = actions.ignoreReview(item.id)
             if (r == null) finish() else error = r
         })
-        TopIcon(Icons.Outlined.Edit, "Edit all details", { onEdit(item.copy(draft = current())) })
-        Spacer(Modifier.weight(1f))
-        CheckButton("Record this alert", reason == null, {
+        SetupIconButton(Icons.Outlined.Edit, "Edit all details", { onEdit(item.copy(draft = current())) })
+        SetupButton("Record", Icons.Outlined.Check, {
             val r = actions.save(current().copy(directionConfirmed = true), null, item.id)
             if (r == null) finish() else error = r
-        })
+        }, Modifier.weight(1f), enabled = reason == null)
     }
     Spacer(Modifier.height(8.dp))
     val shownReason = error ?: reason
     if (shownReason != null) SideNote(shownReason, color = if (error != null) c.red else c.muted)
-    if (showAlert) {
-        Spacer(Modifier.height(8.dp))
-        Text(
-            item.text,
-            style = CamelType.Reference, color = c.muted,
-            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(c.surface).padding(12.dp),
-        )
-    }
     Spacer(Modifier.height(20.dp))
     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
         GhostButton("Not sure? Leave it", onClose)

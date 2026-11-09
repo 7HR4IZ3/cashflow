@@ -8,6 +8,10 @@ The user requested a **completely new direction** and **icon-only bottom navigat
 
 The [Fresh current comparison](fresh-current-comparison.html), [reference research](fresh-current-research.md), and original [UI design](ui-design.md) remain historical context. Their appearance and labeled-navigation rules are superseded by the new request.
 
+## Next feature spec
+
+[Accounts, goals and insights](accounts-goals-insights-spec.md): savings accounts, own-account transfers, spending and saving goals, and local nudges. Proposed, not implemented.
+
 ## The app idea
 
 Cashflow is a money diary that builds itself from transaction alerts. The user chooses which sources to watch. Cashflow interprets relevant alerts, compares them with recent evidence, and records or updates transactions. Clear entries stay recorded unless corrected. Uncertain entries wait for review.

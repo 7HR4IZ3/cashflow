@@ -50,3 +50,6 @@ INSERT OR REPLACE INTO preference(key, value) VALUES (?, ?);
 
 expireRawText:
 UPDATE captured_event SET body = '' WHERE captured_at < ? AND review_payload IS NULL;
+
+updateReview:
+UPDATE captured_event SET review_payload = ? WHERE id = ? AND ignored = 0 AND entry_id IS NULL AND review_payload IS NOT NULL;

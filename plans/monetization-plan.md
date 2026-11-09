@@ -1,58 +1,51 @@
-# Cashflow monetization plan
+# Cashflow plans and pricing
 
-Decided 2026-10-29. The app is **free on Google Play** (a free app cannot become paid later; paid can become free). **No ads.** Revenue comes from a paid subscription that unlocks AI help.
+Updated 30 October 2026. Supersedes the earlier Free/Pro proposal. Cashflow stays free to install, with no ads.
 
-## Model
+| Feature | Free | Lite | Premium |
+|---|---|---|---|
+| Watched apps | 2 | 5 | Unlimited |
+| Manual records and local parsing | Unlimited | Unlimited | Unlimited |
+| AI-assisted alerts per UTC calendar month | 0 | 300 | 3,000 |
+| Review, Recovery and CSV export | Included | Included | Included |
+| Proposed monthly USD price | Free | $1.49 | $4.99 |
+| Proposed yearly USD price | Free | $11.99 | $39.99 |
 
-Freemium with a subscription.
+Premium is for heavy capture usage. The AI allowance limits cloud requests, not transactions recorded per day. A clear alert handled locally consumes no AI allowance. No unused AI allowance carries over. Prices are recommendations, not activated Play products; the app always displays localized prices returned by Google Play.
 
-| | Free | Pro (subscription) |
-|---|---|---|
-| Manual entry, Review, Recovery, CSV export | yes | yes |
-| Rule-based capture from watched apps | up to 2 apps | unlimited apps |
-| AI help resolving unsure alerts | small monthly allowance (about 10), or none | unlimited |
-| Auto-categorising, later insights | no | yes |
+## Cost target
 
-Rules:
-- Limit by value, not cost. Model cost is negligible (below).
-- Never gate access to the user's own records: export and Recovery stay free.
-- Launch price to test: about $2.99 per month or $19.99 per year, with regional pricing (Nigerian users). Play keeps 15% of subscription revenue.
+The user wants one Lite subscription to cover the expected usage of two to five additional Lite users. TypeSafe currently advertises $42 per billion input tokens, equivalent to $0.042 per million. At an estimated 2,000 tokens per AI-assisted alert, the maximum Lite allowance costs about $0.0252 per month in model input charges. Six Lite users total about $0.1512. A $1.49 monthly subscription leaves about $1.2665 after a 15% Play fee, before taxes, infrastructure, support, refunds or other costs. An $11.99 annual subscription averages about $0.8493 per month after that fee. These estimates cover the model-cost target with room to spare, but are not measured total margins.
 
-## Decision model: Jev (TypeSafe)
+At the same token estimate, Premium's full allowance costs about $0.252 per month in model input charges. Measure actual token usage and Convex costs before raising allowances or reducing regional prices.
 
-Jev is a decision-only model. It returns typed answers (choice, score, probability), not generated text. It fits classifying notifications.
+Sources checked 30 October 2026:
+- https://typesafe.ai/
+- https://support.google.com/googleplay/android-developer/answer/112622
 
-Pricing, as reported in October 2026 (verify on TypeSafe's pricing page before relying on it; the model was in early access and TypeSafe has not shown the pricing is sustainable):
-- Input about $0.042 per 1M tokens; output free. AI/ML API charges about $0.058 per 1M.
-- Waitlist reported dropped 2026-09-20; new accounts get $5 credit.
-- Accuracy is modest: an independent evaluation reports median macro-F1 0.581, below larger open models near 0.60.
+## AI behavior
 
-Expected cost (estimate, not measured):
-- About 300 input tokens per notification at 100 notifications per month is about $0.001 per user per month.
-- 10x that (extra context per call) is about $0.01 per user per month.
+- Both AI consent and automatic help default off.
+- Ask Jev sends one selected Review alert and its source.
+- Optional automatic help queues only new unclear payment alerts after both switches are enabled. It does not upload an existing Review backlog.
+- Amount, currency, date and counterparty remain locally parsed. Jev suggests relevance, direction and transaction kind from fixed choices. Low-confidence answers abstain.
+- Suggestions remain in Review. Choosing a suggested direction or kind is explicit; recording is another explicit action. No cloud decision silently creates, changes, deletes or ignores a transaction.
+- Authentication alerts are rejected locally and again by the backend.
+- Disabling consent stops future sends. An in-flight provider request cannot be retracted; its suggestion is discarded after opt-out. Turning off automatic help also prevents queued automatic requests from being sent.
+- Android WorkManager persists only a Review ID and automatic/manual flag, with network constraints and bounded retries. No raw alert is copied into WorkManager.
 
-Design consequence: keep amount and currency parsing deterministic in `AlertParser`. Call the model only for what the parser cannot settle (direction, kind, counterparty, relevance). That cuts calls and limits the damage of a wrong answer. Anything the model is unsure about still goes to Review.
+## Subscriptions
 
-## Privacy and policy consequences
+- Product IDs: `cashflow_lite`, `cashflow_premium`.
+- Each product has `monthly` and `yearly` auto-renewing base plans.
+- Prices come from Google Play; checkout, cancellation, renewal, restore and plan replacement use Play Billing.
+- Convex verifies purchases with Google's subscriptionsv2 API and acknowledges valid initial purchases. Clients cannot choose their entitlement or allowance.
+- Pending, held, paused, expired and unrecognized products grant no paid entitlement. Cancelled subscriptions remain paid only until their verified expiry. Grace-period subscriptions retain access.
+- The device caches a verified entitlement for at most 24 hours and never past subscription expiry. Every AI request verifies the purchase again. No RTDN webhook is required for the current request-time checks; offline watched-app entitlements may remain until the bounded lease expires after a refund.
+- Downgrades preserve all records and app selections. Capture pauses if the selected count exceeds the new tier; the user chooses which apps to keep. Manual entry, Review, export and Recovery keep working.
 
-- The listing and README say alert text stays on the device. Sending text to Jev breaks that. Make AI **opt-in**, say so plainly in the listing and in-app, and keep capture fully working without it.
-- Data safety: when AI ships, declare financial info as shared with a third-party processor, with the retention terms of the chosen provider. Update the privacy policy.
-- No ad SDKs, so no advertising ID. The Play Ads declaration stays "No".
-- The app currently has no internet permission. AI and Play Billing need `INTERNET` and the billing library.
-- Notification access is a sensitive permission; Play reviews it closely. Never send notification content anywhere for any purpose other than the user's own AI help.
+## Release state
 
-## To build
+Version 0.1.0, code 1, remains the published internal-test release. Its offline-only privacy declarations still apply to that build. The new implementation is version 0.2.0, code 2, and has not been uploaded to Play.
 
-1. Entitlement state in the shared module (`isPro`), free-tier limits enforced in `LedgerStore` or the capture selection (2 watched apps).
-2. Paywall and upgrade prompt when adding a third app.
-3. Play Billing integration (subscription product, restore purchases).
-4. AI client behind an interface, off by default, with a per-month free allowance.
-5. Settings: AI opt-in switch and a plain description of what is sent.
-6. Update listing text, privacy policy and Data safety before the AI release.
-
-## Play Console state
-
-- Store listing, Finance category, Ads = No: done.
-- Pending: privacy policy URL, sign-in details, content rating, target audience, Data safety, government apps, financial features, health, store contact email.
-- First release ships without AI and without billing; Data safety for it is "no data collected".
-- Production access needs a closed test with at least 12 testers for 14 days.
+The Convex development backend is deployed. Jev credentials, Google service-account access, Play subscription products, localized pricing and licensed purchase testing still need setup. Checkout is disabled until the backend advertises readiness. Update the published privacy policy, listing and Data safety before distributing the AI-enabled build. See [backend setup](../backend/README.md).

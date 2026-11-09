@@ -4,6 +4,8 @@ data class ParsedAlert(val draft: EntryDraft?, val reason: String?, val referenc
 
 /** Conservative baseline: unknown or conflicting wording never auto-enters the ledger. */
 object AlertParser {
+    const val REASON_DIRECTION = "Check whether money came in or went out"
+    const val REASON_CONFIRM = "Confirm the payment details"
     private val currencyAmount = Regex("(?i)(NGN|USD|GBP|EUR|CAD|GHS|KES|ZAR|INR|JPY|KWD|₦|£|€)\\s*([0-9][0-9,]*(?:\\.[0-9]+)?)")
     private val authentication = Regex("(?i)\\b(otp|one[- ]time|verification code|security code|passcode)\\b")
     fun parse(text: String, currency: String, today: String): ParsedAlert {
@@ -29,8 +31,7 @@ object AlertParser {
         val failed = Regex("(?i)\\b(failed|declined|unsuccessful|cancelled)\\b").containsMatchIn(text)
         val reversal = Regex("(?i)\\b(reversed|reversal|refund)\\b").containsMatchIn(text)
         val counterparty = Regex("(?i)\\b(?:to|from)\\s+([\\p{L}][\\p{L} .'-]{0,70})").find(text)?.groupValues?.get(1)
-            ?.split(Regex("(?i)\\s+(?:ref(?:erence)?\\b|balance\\b|session\\s+id\\b)"), limit = 2)
-            ?.first()?.trim()?.trimEnd('.') ?: ""
+            ?.let(::cleanCounterparty) ?: ""
         val reference = Regex("(?i)\\b(?:ref(?:erence)?|session id)[: #]+([a-z0-9-]{5,80})").find(text)?.groupValues?.get(1)?.uppercase()
         val result = base.copy(
             amount = amount, currency = code, counterparty = counterparty,
@@ -40,10 +41,33 @@ object AlertParser {
         // Broad text support is useful for review, but only explicit debit/credit alerts auto-record.
         val explicit = Regex("(?i)\\b(debited|credited|debit alert|credit alert)\\b").containsMatchIn(text)
         return ParsedAlert(result, when {
-            !directionKnown -> "Check whether money came in or went out"
+            !directionKnown -> REASON_DIRECTION
             reversal -> "Link this refund or reversal to its original payment"
-            !explicit -> "Confirm the payment details"
+            !explicit -> REASON_CONFIRM
             else -> null
         }, reference)
+    }
+
+    // Where a name ends: a sentence break after a real word, or the first phrase banks add after the name.
+    private val nameStop = Regex("(?i)\\s+(?:view|log\\s?in|login|check|available|avail|balance|bal|ref(?:erence)?|session|narration|desc(?:ription)?|on|via|using|at|for|dated?|thank)\\b")
+    /** For showing a stored name: strips bank boilerplate saved before the parser learned to, and tames ALL CAPS. */
+    fun displayName(raw: String): String {
+        val clean = cleanCounterparty(raw)
+        return clean.split(' ').joinToString(" ") { w ->
+            // Long all-caps words become Capitalised; short ones (MTN, UBA, POS) and mixed case (OPay) stay.
+            if (w.length > 3 && w.any { it.isLetter() } && w == w.uppercase()) w.lowercase().replaceFirstChar { it.uppercase() } else w
+        }
+    }
+
+    private fun cleanCounterparty(raw: String): String {
+        var name = raw
+        nameStop.find(name)?.let { name = name.substring(0, it.range.first) }
+        var i = name.indexOf(". ")
+        while (i != -1) {
+            // "J. Doe" keeps its initial; "ALAGBADA. View" ends the name.
+            if (i >= 2 && name[i - 1].isLetter() && name[i - 2].isLetter()) { name = name.substring(0, i); break }
+            i = name.indexOf(". ", i + 1)
+        }
+        return name.trim().trimEnd('.', ',', '-').trim()
     }
 }

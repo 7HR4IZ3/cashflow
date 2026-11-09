@@ -43,7 +43,7 @@ class MainActivity : ComponentActivity() {
             CompositionLocalProvider(LocalAppIcons provides appIcons) { CashflowApp(state, app.store) }
         }
     }
-    override fun onResume() { super.onResume(); app.activity = this; app.store.refreshCapture() }
+    override fun onResume() { super.onResume(); app.activity = this; app.store.refreshCapture(); app.subscriptions.refresh() }
     override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); setIntent(intent); intent.getStringExtra("entryId")?.let(app.store::focusEntry) }
     override fun onDestroy() { if (app.activity === this) app.activity = null; super.onDestroy() }
 }
