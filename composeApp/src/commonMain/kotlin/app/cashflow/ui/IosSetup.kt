@@ -37,6 +37,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import app.cashflow.ui.components.AppGrid
+import app.cashflow.ui.components.PaperField
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -260,20 +263,31 @@ private fun Screenshot(image: DrawableResource, description: String, modifier: M
 @Composable
 internal fun AndroidSetupGuide(state: CashflowState, actions: CashflowActions) {
     val granted = state.capture.accessGranted
+    var query by rememberSaveable { mutableStateOf("") }
+    // Android 13+ needs a runtime permission before Cashflow can show its "recorded" notifications. Asked once, here,
+    // where the person is already setting up alerts. Older versions ignore the request.
+    var asked by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        if (!asked) { asked = true; actions.requestNotificationPermission() }
+    }
+    val sources = state.capture.sources
+    val shown = sources.filter { query.isBlank() || it.name.contains(query.trim(), ignoreCase = true) }
     Column(Modifier.fillMaxWidth()) {
         SetupRow(Icons.Outlined.Notifications, "Allow access", done = granted, last = false) {
             if (!granted) SetupButton("Open", CFIcons.ArrowOut, { actions.openCaptureSettings() })
         }
-        SetupRow(CFIcons.ArrowIn, "Pick your banks", done = state.capture.sources.any { it.selected }, last = true) {
-            Text(
-                "Settings, then Capture, then Apps to watch.",
-                style = CamelType.LedgerLabel, color = LocalCashflowColors.current.muted,
-                modifier = Modifier.padding(top = 2.dp),
-            )
+        SetupRow(CFIcons.ArrowIn, "Pick your banks", done = sources.any { it.selected }, last = true) {
+            if (sources.size > 12) {
+                PaperField(value = query, onValueChange = { query = it }, placeholder = "Search apps")
+                Spacer(Modifier.height(8.dp))
+            }
+            if (shown.isEmpty()) {
+                Text("No app matches.", style = CamelType.LedgerLabel, color = LocalCashflowColors.current.muted)
+            } else {
+                AppGrid(shown, { app, on -> actions.selectSource(app.id, on) })
+            }
         }
-        Spacer(Modifier.height(20.dp))
-        ProofPill(state.capture.lastReceived, if (granted) "Waiting for first alert" else "Access is off")
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(8.dp))
         HelpToggle(
             listOf(
                 "Cashflow only reads alerts from the apps you choose.",

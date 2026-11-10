@@ -35,4 +35,4 @@ The directory is private and both files are readable only by the current user. B
 
 ## Subsequent AI work
 
-The new source implementation is version 0.2.0/code 2, with a Convex development backend, three tiers, billing and opt-in Jev help. It has not been uploaded to Play. See [AI and subscription verification](ai-subscription-verification.md) for checks and activation requirements.
+The source is now version 0.2.1/code 3 (Convex development backend, three tiers, billing, opt-in Jev help, Android app-picker setup). Version 0.2.0/code 2 was uploaded on 10 Nov 2026 and is already released on Closed testing (managed publishing is off, so saving a release publishes it). Internal testing holds a draft of 0.2.1/code 3 that has not been published. See [AI and subscription verification](ai-subscription-verification.md) for checks and activation requirements.

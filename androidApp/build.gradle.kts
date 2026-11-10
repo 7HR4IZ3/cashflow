@@ -25,7 +25,7 @@ val releaseSigning = Properties().apply {
 android {
     namespace = "app.cashflow.android"
     compileSdk = 36
-    defaultConfig { applicationId = "app.cashflow.mobile"; minSdk = 26; targetSdk = 36; versionCode = 2; versionName = "0.2.0" }
+    defaultConfig { applicationId = "app.cashflow.mobile"; minSdk = 26; targetSdk = 36; versionCode = 3; versionName = "0.2.1" }
     buildFeatures { compose = true; buildConfig = true }
     val backendUrl = providers.gradleProperty("cashflowBackendUrl").orElse("").get()
     defaultConfig { buildConfigField("String", "CASHFLOW_BACKEND_URL", "\"" + backendUrl.replace("\\", "\\\\").replace("\"", "\\\"") + "\"") }
