@@ -7,6 +7,8 @@ kotlin {
         implementation(project(":composeApp"))
         implementation(project(":shared"))
         implementation("com.android.billingclient:billing:8.3.0")
+        // Billing pulls in androidx.fragment 1.1.0, which Play flags as outdated.
+        implementation("androidx.fragment:fragment:1.8.9")
         implementation("androidx.work:work-runtime-ktx:2.11.2")
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
         implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
@@ -37,5 +39,10 @@ android {
             keyPassword = releaseSigning.getProperty("keyPassword")
         }
         buildTypes.getByName("release") { signingConfig = signingConfigs.getByName("release") }
+    }
+    buildTypes.getByName("release") {
+        isMinifyEnabled = true
+        isShrinkResources = true
+        proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
     }
 }
